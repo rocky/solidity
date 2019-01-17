@@ -130,11 +130,15 @@ private:
 
 	/// @returns the name of the cleanup function for the given type and
 	/// adds its implementation to the requested functions.
+	std::string cleanupFunction(Type const& _type);
+
+	/// @returns the name of the validator function for the given type and
+	/// adds its implementation to the requested functions.
 	/// @param _revertOnFailure if true, causes revert on invalid data,
 	/// otherwise an assertion failure.
 	///
 	/// This is used for data decoded from external sources.
-	std::string cleanupFunction(Type const& _type, bool _revertOnFailure = false);
+	std::string validatorFunction(Type const& _type, bool _revertOnFailure = false);
 
 	/// Performs cleanup after reading from a potentially compressed storage slot.
 	/// The function does not perform any validation, it just masks or sign-extends

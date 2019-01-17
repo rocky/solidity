@@ -4,6 +4,7 @@ Language Features:
 
 
 Compiler Features:
+ * ABI Decoder: The experimental decoder to raise an error on dirty inputs.
  * SMTChecker: Support arithmetic compound assignment operators.
  * Optimizer: Add rule for shifts by constants larger than 255 for Constantinople.
  * Optimizer: Add rule to simplify certain ANDs and SHL combinations
