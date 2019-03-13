@@ -32,12 +32,15 @@ for the :ref:`standard-json interface <compiler-api>`:
 Furthermore, the commandline interface can be switched to Yul mode
 using ``solc --strict-assembly``.
 
-.. note::
+.. warning::
 
-    Note that the flavour used for "inline assembly" does not have types
+    Yul does not yet support types
     (everything is ``u256``) and the built-in functions are identical
-    to the EVM opcodes. Please resort to the inline assembly documentation
+    to the EVM opcodes. Refer to the :ref:`inline assembly documentation <inline-assembly>`
     for details.
+
+    You can try the command line interface by adding the ``--strict-assembly``
+    and ``--optimize`` when using ``solc``.
 
 The core components of Yul are functions, blocks, variables, literals,
 for-loops, if-statements, switch-statements, expressions and assignments to variables.
