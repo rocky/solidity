@@ -7,15 +7,13 @@ Yul
 .. index:: ! assembly, ! asm, ! evmasm, ! yul, julia, iulia
 
 Yul (previously also called JULIA or IULIA) is an intermediate language that can
-compile to various different backends
-(EVM 1.0, EVM 1.5 and eWASM are planned).
-Because of this, it is designed to be a usable common denominator of all three
-platforms.
-It can already be used for "inline assembly" inside Solidity and
-future versions of the Solidity compiler will use Yul as intermediate
-language. It should also be easy to build high-level optimizer stages for Yul.
+compile bytecode output for different backends.
 
-In its flavour of inline-assembly, Yul can be used as a language setting
+Support for EVM 1.0, EVM 1.5 and eWASM is planned, and it is designed to be a usable common denominator of all three
+platforms. It can already be used for "inline assembly" inside Solidity and future versions of the Solidity compiler
+will use Yul as an intermediate language. It should also be easy to build high-level optimizer stages for Yul.
+
+With the "inline assembly" flavour, Yul can be used as a language setting
 for the :ref:`standard-json interface <compiler-api>`:
 
 ::
@@ -29,13 +27,14 @@ for the :ref:`standard-json interface <compiler-api>`:
         }
     }
 
-Furthermore, the commandline interface can be switched to Yul mode
-using ``solc --strict-assembly``.
+And on the command line interface with the ``--strict-assembly`` parameter.
 
 .. warning::
 
-    Yul is in active development, and as such does not yet support types (everything is ``u256``),
-    and the built-in functions are identical to the EVM opcodes. Refer to the :ref:`inline assembly documentation <inline-assembly>` for details.
+    Yul is in active development and its bytecode output is fully implemented for the "strict assembly" flavour which
+    does not have types (everything is ``u256``) and uses :ref:`EVM opcodes <opcodes>` as built-in functions.
+
+    It is not yet implemented for the "strict yul" flavour that has types and a different set of built-in functions.
 
 The core components of Yul are functions, blocks, variables, literals,
 for-loops, if-statements, switch-statements, expressions and assignments to variables.
