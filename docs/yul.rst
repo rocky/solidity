@@ -34,7 +34,7 @@ And on the command line interface with the ``--strict-assembly`` parameter.
     Yul is in active development and its bytecode output is fully implemented for the "strict assembly" flavour which
     does not have types (everything is ``u256``) and uses :ref:`EVM opcodes <opcodes>` as built-in functions.
 
-    It is not yet implemented for the "strict yul" flavour that has types and a different set of built-in functions.
+    The "strict yul" flavour that has types and a different set of built-in functions is not yet implemented.
 
 The core components of Yul are functions, blocks, variables, literals,
 for-loops, if-statements, switch-statements, expressions and assignments to variables.
