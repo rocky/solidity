@@ -130,12 +130,20 @@ string YulInterpreterTest::interpret()
 {
 	InterpreterState state;
 	state.maxTraceSize = 10000;
+	state.maxSteps = 10000;
+	state.maxMemSize = 0x20000000;
 	Interpreter interpreter(state);
 	try
 	{
 		interpreter(*m_ast);
 	}
-	catch (InterpreterTerminated const&)
+	catch (ExplicitlyTerminated const&)
+	{
+	}
+	catch (StepLimitReached const&)
+	{
+	}
+	catch (TraceLimitReached const&)
 	{
 	}
 

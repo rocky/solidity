@@ -24,13 +24,13 @@ void yulFuzzerUtil::interpret(ostream& _os, shared_ptr<yul::Block> _ast)
 {
 	InterpreterState state;
 	state.maxTraceSize = 75;
-	state.maxSteps = 10000;
+	state.maxSteps = 100;
 	Interpreter interpreter(state);
 	try
 	{
 		interpreter(*_ast);
 	}
-	catch (InterpreterTerminated const&)
+	catch (ExplicitlyTerminated const&)
 	{
 	}
 

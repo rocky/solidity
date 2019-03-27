@@ -96,7 +96,13 @@ void interpret(string const& _source)
 	{
 		interpreter(*ast);
 	}
-	catch (InterpreterTerminated const&)
+	catch (ExplicitlyTerminated const&)
+	{
+	}
+	catch (StepLimitReached const&)
+	{
+	}
+	catch (TraceLimitReached const&)
 	{
 	}
 

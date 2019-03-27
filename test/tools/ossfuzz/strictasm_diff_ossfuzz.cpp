@@ -76,9 +76,29 @@ extern "C" int LLVMFuzzerTestOneInput(uint8_t const* _data, size_t _size)
 
 	ostringstream os1;
 	ostringstream os2;
-	yulFuzzerUtil::interpret(os1, stack.parserResult()->code);
+	try
+	{
+		yulFuzzerUtil::interpret(os1, stack.parserResult()->code);
+	}
+	catch (TraceLimitReached const&)
+	{
+	}
+	catch (StepLimitReached const&)
+	{
+		return 0;
+	}
+
 	stack.optimize();
-	yulFuzzerUtil::interpret(os2, stack.parserResult()->code);
+	try
+	{
+		yulFuzzerUtil::interpret(os2, stack.parserResult()->code);
+	}
+	catch (TraceLimitReached const&)
+	{
+	}
+	catch (StepLimitReached const&)
+	{
+	}
 
 	bool isTraceEq = (os1.str() == os2.str());
 	yulAssert(isTraceEq, "Interpreted traces for optimized and unoptimized code differ.");
