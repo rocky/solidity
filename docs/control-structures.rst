@@ -72,6 +72,10 @@ all function arguments have to be copied to memory.
 
 When calling functions of other contracts, you can specify the amount of Wei or gas sent with the call with the special options ``.value()`` and ``.gas()``, respectively. Any Wei you send to the contract is added to the total balance of the contract:
 
+.. warning::
+
+    Use the most precise units to represent the wei amount as possible, as you lose any that is rounded due to a lack of
+    precision.
 
 ::
 
