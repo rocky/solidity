@@ -10,6 +10,7 @@ macro(configure_project)
 
 	# components
 	eth_default_option(TESTS ON)
+	eth_default_option(PARSE_TESTS ON)
 	eth_default_option(TOOLS ON)
 
 	# Define a matching property name of each of the "features".
@@ -34,6 +35,7 @@ macro(print_config NAME)
 	message("-- COVERAGE         Coverage support                         ${COVERAGE}")
 	message("------------------------------------------------------------- components")
 if (SUPPORT_TESTS)
+	message("-- PARSE_TESTS      Build parser                             ${PARSE_TESTS}")
 	message("-- TESTS            Build tests                              ${TESTS}")
 endif()
 if (SUPPORT_TOOLS)

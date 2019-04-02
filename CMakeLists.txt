@@ -43,7 +43,9 @@ set(LICENSE_TEXT "0x${LICENSE_TEXT}")
 
 configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/license.h.in" include/license.h)
 
+# Sets variables used below like
 include(EthOptions)
+
 configure_project(TESTS)
 
 add_subdirectory(libdevcore)
@@ -59,6 +61,10 @@ if (NOT EMSCRIPTEN)
 		add_subdirectory(liblll)
 		add_subdirectory(lllc)
 	endif()
+endif()
+
+if (PARSE_TESTS)
+	add_subdirectory(testparser)
 endif()
 
 if (TESTS AND NOT EMSCRIPTEN)
