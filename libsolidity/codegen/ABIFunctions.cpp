@@ -328,7 +328,7 @@ string ABIFunctions::cleanupFunction(Type const& _type)
 		case Type::Category::Enum:
 		{
 			// Out of range enums cannot be truncated unambigiously and therefore it should be an error.
-			templ("body", "cleaned := " + validatorFunction(_type) + "(value)");
+			templ("body", "cleaned := value " + validatorFunction(_type) + "(value)");
 			break;
 		}
 		case Type::Category::InaccessibleDynamic:
@@ -347,7 +347,7 @@ string ABIFunctions::validatorFunction(Type const& _type, bool _revertOnFailure)
 	string functionName = string("validator_") + (_revertOnFailure ? "revert_" : "assert_") + _type.identifier();
 	return createFunction(functionName, [&]() {
 		Whiskers templ(R"(
-			function <functionName>(value) -> cleaned {
+			function <functionName>(value) {
 				<body>
 			}
 		)");
