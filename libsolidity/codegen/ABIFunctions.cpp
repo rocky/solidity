@@ -1598,7 +1598,7 @@ string ABIFunctions::abiDecodingFunctionFunctionType(FunctionType const& _type, 
 		{
 			return Whiskers(R"(
 				function <functionName>(offset, end) -> addr, function_selector {
-					addr, function_selector := <splitExtFun>(<decodeFun>(offset))
+					addr, function_selector := <splitExtFun>(<decodeFun>(offset, end))
 				}
 			)")
 			("functionName", functionName)
