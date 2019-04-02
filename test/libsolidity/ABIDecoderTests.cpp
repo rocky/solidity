@@ -591,10 +591,34 @@ BOOST_AUTO_TEST_CASE(validation_function_type)
 		// No failure because the data is not accessed.
 		ABI_CHECK(callContractFunction("h(function[])", 0x20, 1, invalidFun), encodeArgs(3));
 		ABI_CHECK(callContractFunction("i(function[])", 0x20, 1, validFun), encodeArgs(4));
-		// TODO use this once we make index access more strict, too.
-		// ABI_CHECK(callContractFunction("i(function[])", 0x20, 1, invalidFun), newDecoder ? bytes{} : encodeArgs(4));
-		ABI_CHECK(callContractFunction("i(function[])", 0x20, 1, invalidFun), encodeArgs(4));
+		ABI_CHECK(callContractFunction("i(function[])", 0x20, 1, invalidFun), newDecoder ? bytes{} : encodeArgs(4));
 		newDecoder = true;
+	)
+}
+
+BOOST_AUTO_TEST_CASE(validation_function_type_inside_struct)
+{
+	string sourceCode = R"(
+		contract C {
+			struct S { function () external x; }
+			function f(S memory) public pure returns (uint r) { r = 1; }
+			function g(S calldata) external pure returns (uint r) { r = 2; }
+			function h(S calldata s) external pure returns (uint r) { s.x; r = 3; }
+		}
+	)";
+	string validFun{"01234567890123456789abcd"};
+	string invalidFun{"01234567890123456789abcdX"};
+	NEW_ENCODER(
+		compileAndRun(sourceCode);
+		ABI_CHECK(callContractFunction("f((function))", validFun), encodeArgs(1));
+		// Error because we copy to memory
+		ABI_CHECK(callContractFunction("f((function))", invalidFun), encodeArgs());
+		ABI_CHECK(callContractFunction("g((function))", validFun), encodeArgs(2));
+		// No error because x is not accessed.
+		ABI_CHECK(callContractFunction("g((function))", invalidFun), encodeArgs(2));
+		ABI_CHECK(callContractFunction("h((function))", validFun), encodeArgs(3));
+		// Error on access.
+		ABI_CHECK(callContractFunction("h((function))", invalidFun), encodeArgs());
 	)
 }
 
