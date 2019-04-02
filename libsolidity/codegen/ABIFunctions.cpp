@@ -348,10 +348,15 @@ string ABIFunctions::validatorFunction(Type const& _type, bool _revertOnFailure)
 	return createFunction(functionName, [&]() {
 		Whiskers templ(R"(
 			function <functionName>(value) {
-				<body>
+				if iszero(<condition>) { <failure> }
 			}
 		)");
 		templ("functionName", functionName);
+		if (_revertOnFailure)
+			templ("failure", "revert(0, 0)");
+		else
+			templ("failure", "invalid()");
+
 		switch (_type.category())
 		{
 		case Type::Category::Address:
@@ -365,30 +370,18 @@ string ABIFunctions::validatorFunction(Type const& _type, bool _revertOnFailure)
 		case Type::Category::FixedBytes:
 		case Type::Category::Contract:
 		{
-			Whiskers w("cleaned := <cleanup>(value) if iszero(eq(cleaned, value)) { <failure> }");
-			w("cleanup", cleanupFunction(_type));
-			if (_revertOnFailure)
-				w("failure", "revert(0, 0)");
-			else
-				w("failure", "invalid()");
-			templ("body", w.render());
+			templ("condition", "eq(value, " + cleanupFunction(_type) + "(value))");
 			break;
 		}
 		case Type::Category::Enum:
 		{
 			size_t members = dynamic_cast<EnumType const&>(_type).numberOfMembers();
 			solAssert(members > 0, "empty enum should have caused a parser error.");
-			Whiskers w("if iszero(lt(value, <members>)) { <failure> } cleaned := value");
-			w("members", to_string(members));
-			if (_revertOnFailure)
-				w("failure", "revert(0, 0)");
-			else
-				w("failure", "invalid()");
-			templ("body", w.render());
+			templ("condition", "lt(value, " + to_string(members) + ")");
 			break;
 		}
 		case Type::Category::InaccessibleDynamic:
-			templ("body", "cleaned := 0");
+			templ("condition", "1");
 			break;
 		default:
 			solAssert(false, "Cleanup of type " + _type.identifier() + " requested.");
@@ -1343,7 +1336,8 @@ string ABIFunctions::abiDecodingFunctionValueType(Type const& _type, bool _fromM
 	return createFunction(functionName, [&]() {
 		Whiskers templ(R"(
 			function <functionName>(offset, end) -> value {
-				value := <validator>(<load>(offset))
+				value := <load>(offset)
+				<validator>(value)
 			}
 		)");
 		templ("functionName", functionName);
@@ -1610,7 +1604,8 @@ string ABIFunctions::abiDecodingFunctionFunctionType(FunctionType const& _type, 
 		{
 			return Whiskers(R"(
 				function <functionName>(offset, end) -> fun {
-					fun := <validateExtFun>(<load>(offset))
+					fun := <load>(offset)
+					<validateExtFun>(fun)
 				}
 			)")
 			("functionName", functionName)
