@@ -73,8 +73,8 @@ safe_kill() {
 }
 
 cleanup() {
-	# ensure failing commands don't cause termination during cleanup (especially within safe_kill)
-	set +e
+    # ensure failing commands don't cause termination during cleanup (especially within safe_kill)
+    set +e
 
     if [[ "$IPC_ENABLED" = true ]] && [[ -n "${ALETH_PID}" ]]
     then
@@ -87,6 +87,7 @@ cleanup() {
 
     echo "Cleaning up working directory ${WORKDIR} ..."
     rm -rf "$WORKDIR" || true
+    rm $ALETH_TMP_OUT
 }
 trap cleanup INT TERM
 
@@ -151,7 +152,7 @@ function download_aleth()
 # echos the PID
 function run_aleth()
 {
-    $ALETH_PATH --log-verbosity 3 --db memorydb --test -d "${WORKDIR}" > $ALETH_TMP_OUT 2>&1 &
+    $ALETH_PATH --log-verbosity 3 --db memorydb --test -d "${WORKDIR}" |& tail -n 10000 &> "$ALETH_TMP_OUT" &
     echo $!
     # Wait until the IPC endpoint is available.
     while [ ! -S "${WORKDIR}/geth.ipc" ] ; do sleep 1; done
@@ -227,8 +228,6 @@ do
                 printError "Some test failed, wrote aleth.log"
             fi
             exit 1
-        else
-            rm $ALETH_TMP_OUT
         fi
         set -e
 
