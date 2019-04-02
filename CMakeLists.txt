@@ -43,28 +43,32 @@ set(LICENSE_TEXT "0x${LICENSE_TEXT}")
 
 configure_file("${CMAKE_SOURCE_DIR}/cmake/templates/license.h.in" include/license.h)
 
-# Sets variables used below like
+# Set default values for variables used below like TESTS, LLL, and PARSE_ONLY
 include(EthOptions)
 
 configure_project(TESTS)
 
-add_subdirectory(libdevcore)
+# FIXME: if libsolidity were isolated more
+# we wouldn't have to pull in libyul and libevmasm unconditionally
 add_subdirectory(liblangutil)
-add_subdirectory(libevmasm)
-add_subdirectory(libyul)
 add_subdirectory(libsolidity)
-add_subdirectory(libsolc)
+add_subdirectory(libdevcore)
+add_subdirectory(libyul)
+add_subdirectory(libevmasm)
+
+if (PARSE_ONLY)
+	# Include tests for parser
+	add_subdirectory(testparser)
+else()
+	# solc isn't needed if we are only parsing
+	add_subdirectory(solc)
+endif()
 
 if (NOT EMSCRIPTEN)
-	add_subdirectory(solc)
 	if (LLL)
 		add_subdirectory(liblll)
 		add_subdirectory(lllc)
 	endif()
-endif()
-
-if (PARSE_TESTS)
-	add_subdirectory(testparser)
 endif()
 
 if (TESTS AND NOT EMSCRIPTEN)

@@ -53,7 +53,6 @@ ASTPointer<ContractDefinition> parseText(std::string const& _source, ErrorList& 
 	return ASTPointer<ContractDefinition>();
 }
 
-#ifdef ROCKY_OKS
 bool successParse(std::string const& _source)
 {
 	ErrorList errors;
@@ -74,7 +73,6 @@ bool successParse(std::string const& _source)
 	BOOST_CHECK(Error::containsOnlyWarnings(errors));
 	return true;
 }
-#endif
 
 Error getError(std::string const& _source)
 {
@@ -92,7 +90,6 @@ Error getError(std::string const& _source)
 	return *error;
 }
 
-#ifdef ROCKY_OKS
 void checkFunctionNatspec(
 	FunctionDefinition const* _function,
 	std::string const& _expectedDoc
@@ -102,7 +99,6 @@ void checkFunctionNatspec(
 	BOOST_CHECK_MESSAGE(doc != nullptr, "Function does not have Natspec Doc as expected");
 	BOOST_CHECK_EQUAL(*doc, _expectedDoc);
 }
-#endif
 
 }
 
@@ -125,7 +121,6 @@ BOOST_AUTO_TEST_CASE(unsatisfied_version)
 	CHECK_PARSE_ERROR(text, "Source file requires different compiler version");
 }
 
-#if 0
 BOOST_AUTO_TEST_CASE(unsatisfied_version_followed_by_invalid_syntax)
 {
 	char const* text = R"(
@@ -600,6 +595,8 @@ BOOST_AUTO_TEST_CASE(complex_import)
 	BOOST_CHECK(successParse(text));
 }
 
+// FIXME: make this dynamic
+#ifdef LONG_TESTS
 BOOST_AUTO_TEST_CASE(recursion_depth1)
 {
 	string text("contract C { bytes");
