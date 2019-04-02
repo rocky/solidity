@@ -591,7 +591,9 @@ BOOST_AUTO_TEST_CASE(validation_function_type)
 		// No failure because the data is not accessed.
 		ABI_CHECK(callContractFunction("h(function[])", 0x20, 1, invalidFun), encodeArgs(3));
 		ABI_CHECK(callContractFunction("i(function[])", 0x20, 1, validFun), encodeArgs(4));
-		ABI_CHECK(callContractFunction("i(function[])", 0x20, 1, invalidFun), newDecoder ? bytes{} : encodeArgs(4));
+		// TODO use this once we make index access more strict, too.
+		// ABI_CHECK(callContractFunction("i(function[])", 0x20, 1, invalidFun), newDecoder ? bytes{} : encodeArgs(4));
+		ABI_CHECK(callContractFunction("i(function[])", 0x20, 1, invalidFun), encodeArgs(4));
 		newDecoder = true;
 	)
 }
