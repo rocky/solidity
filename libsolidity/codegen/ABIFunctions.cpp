@@ -290,6 +290,10 @@ string ABIFunctions::cleanupFunction(Type const& _type)
 		case Type::Category::FixedPoint:
 			solUnimplemented("Fixed point types not implemented.");
 			break;
+		case Type::Category::Function:
+			solAssert(dynamic_cast<FunctionType const&>(_type).kind() == FunctionType::Kind::External, "");
+			templ("body", "cleaned := " + cleanupFunction(FixedBytesType(24)) + "(value)");
+			break;
 		case Type::Category::Array:
 		case Type::Category::Struct:
 		case Type::Category::Mapping:
@@ -355,6 +359,7 @@ string ABIFunctions::validatorFunction(Type const& _type, bool _revertOnFailure)
 		case Type::Category::RationalNumber:
 		case Type::Category::Bool:
 		case Type::Category::FixedPoint:
+		case Type::Category::Function:
 		case Type::Category::Array:
 		case Type::Category::Struct:
 		case Type::Category::FixedBytes:
@@ -588,21 +593,6 @@ string ABIFunctions::conversionFunction(Type const& _from, Type const& _to)
 		solAssert(!body.empty(), _from.canonicalName() + " to " + _to.canonicalName());
 		templ("body", body);
 		return templ.render();
-	});
-}
-
-string ABIFunctions::cleanupCombinedExternalFunctionIdFunction()
-{
-	string functionName = "cleanup_combined_external_function_id";
-	return createFunction(functionName, [&]() {
-		return Whiskers(R"(
-			function <functionName>(addr_and_selector) -> cleaned {
-				cleaned := <clean>(addr_and_selector)
-			}
-		)")
-		("functionName", functionName)
-		("clean", cleanupFunction(FixedBytesType(24)))
-		.render();
 	});
 }
 
@@ -1295,7 +1285,7 @@ string ABIFunctions::abiEncodingFunctionFunctionType(
 				}
 			)")
 			("functionName", functionName)
-			("cleanExtFun", cleanupCombinedExternalFunctionIdFunction())
+			("cleanExtFun", cleanupFunction(_to))
 			.render();
 		});
 }
@@ -1604,14 +1594,15 @@ string ABIFunctions::abiDecodingFunctionFunctionType(FunctionType const& _type, 
 
 	return createFunction(functionName, [&]() {
 		if (_forUseOnStack)
+
 		{
 			return Whiskers(R"(
 				function <functionName>(offset, end) -> addr, function_selector {
-					addr, function_selector := <splitExtFun>(<load>(offset))
+					addr, function_selector := <splitExtFun>(<decodeFun>(offset))
 				}
 			)")
 			("functionName", functionName)
-			("load", _fromMemory ? "mload" : "calldataload")
+			("decodeFun", abiDecodingFunctionFunctionType(_type, _fromMemory, false))
 			("splitExtFun", m_utils.splitExternalFunctionIdFunction())
 			.render();
 		}
@@ -1619,12 +1610,12 @@ string ABIFunctions::abiDecodingFunctionFunctionType(FunctionType const& _type, 
 		{
 			return Whiskers(R"(
 				function <functionName>(offset, end) -> fun {
-					fun := <cleanExtFun>(<load>(offset))
+					fun := <validateExtFun>(<load>(offset))
 				}
 			)")
 			("functionName", functionName)
 			("load", _fromMemory ? "mload" : "calldataload")
-			("cleanExtFun", cleanupCombinedExternalFunctionIdFunction())
+			("validateExtFun", validatorFunction(_type, true))
 			.render();
 		}
 	});
