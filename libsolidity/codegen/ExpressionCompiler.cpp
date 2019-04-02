@@ -1436,6 +1436,7 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 				if (_memberAccess.annotation().type->isValueType())
 				{
 					solAssert(_memberAccess.annotation().type->calldataEncodedSize() > 0, "");
+					// TODO if ABIEncoderV2 is enabled, run validate?
 					CompilerUtils(m_context).loadFromMemoryDynamic(*_memberAccess.annotation().type, true, true, false);
 				}
 				else
@@ -1588,6 +1589,7 @@ bool ExpressionCompiler::visit(IndexAccess const& _indexAccess)
 			{
 				ArrayUtils(m_context).accessIndex(arrayType, true);
 				if (arrayType.baseType()->isValueType())
+					// TODO if ABIEncoderV2 is enabled, run validate?
 					CompilerUtils(m_context).loadFromMemoryDynamic(
 						*arrayType.baseType(),
 						true,
