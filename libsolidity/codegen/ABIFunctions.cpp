@@ -1358,7 +1358,7 @@ string ABIFunctions::abiDecodingFunctionValueType(Type const& _type, bool _fromM
 		)");
 		templ("functionName", functionName);
 		templ("load", _fromMemory ? "mload" : "calldataload");
-		// Cleanup itself should use the type and not decodingType, because e.g.
+		// Validation should use the type and not decodingType, because e.g.
 		// the decoding type of an enum is a plain int.
 		templ("validator", validatorFunction(_type, true));
 		return templ.render();

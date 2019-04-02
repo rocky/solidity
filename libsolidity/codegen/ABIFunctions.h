@@ -130,6 +130,8 @@ private:
 
 	/// @returns the name of the cleanup function for the given type and
 	/// adds its implementation to the requested functions.
+	/// The cleanup function defers to the validator function with "revert"
+	/// if there is no reasonable way to clean a value.
 	std::string cleanupFunction(Type const& _type);
 
 	/// @returns the name of the validator function for the given type and
@@ -153,7 +155,7 @@ private:
 	/// to a value of type @a _to. The resulting vale is guaranteed to be in range
 	/// (i.e. "clean"). Asserts on failure.
 	///
-	/// This is used for data being encoded.
+	/// This is used for data being encoded or general type conversions in the code.
 	std::string conversionFunction(Type const& _from, Type const& _to);
 
 	std::string cleanupCombinedExternalFunctionIdFunction();
