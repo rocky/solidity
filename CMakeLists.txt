@@ -48,20 +48,20 @@ include(EthOptions)
 
 configure_project(TESTS)
 
-# FIXME: if libsolidity were isolated more
-# we wouldn't have to pull in libyul and libevmasm unconditionally
-add_subdirectory(liblangutil)
-add_subdirectory(libsolidity)
 add_subdirectory(libdevcore)
-add_subdirectory(libyul)
-add_subdirectory(libevmasm)
+add_subdirectory(liblangutil)
 
 if (PARSE_ONLY)
-	# Include tests for parser
-	add_subdirectory(testparser)
+	# Include tests for phase 0
+	include_directories(${PROJECT_SOURCE_DIR})
+	add_subdirectory(libsolidityp0)
+	add_subdirectory(testp0)
 else()
 	# solc isn't needed if we are only parsing
 	add_subdirectory(solc)
+	add_subdirectory(libsolidity)
+	add_subdirectory(libyul)
+	add_subdirectory(libevmasm)
 endif()
 
 if (NOT EMSCRIPTEN)
