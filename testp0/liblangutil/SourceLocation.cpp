@@ -31,7 +31,6 @@ namespace test
 
 BOOST_AUTO_TEST_SUITE(SourceLocationTest)
 
-#if 0
 BOOST_AUTO_TEST_CASE(test_fail)
 {
 	auto const source = std::make_shared<CharStream>("", "source");
@@ -47,7 +46,6 @@ BOOST_AUTO_TEST_CASE(test_fail)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-#endif
 
 }
 } // end namespaces
