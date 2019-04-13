@@ -35,8 +35,8 @@
 
 #pragma GCC diagnostic pop
 
-#include <testparser/TestCase.h>
-#include <testparser/Options.h>
+#include <testp0/TestCase.h>
+#include <testp0/Options.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>

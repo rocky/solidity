@@ -4,4 +4,4 @@ contract C {
     }
 }
 // ----
-// ParserError: (80-87): Expected ';' but got 'payable'
+// ParserError: (80-87): Expected ';' but got 'payable'; deleting tokens until we find one.

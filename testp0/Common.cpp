@@ -67,7 +67,7 @@ CommonOptions::CommonOptions(std::string _caption):
 
 void CommonOptions::validate() const
 {
-  	assertThrow(
+	assertThrow(
 		!testPath.empty(),
 		ConfigException,
 		"No test path specified. The --testpath argument must not be empty when given."
