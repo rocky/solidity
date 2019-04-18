@@ -31,7 +31,7 @@ namespace dev
 {
 namespace solidity
 {
-namespace test
+namespace testparser
 {
 
 struct SyntaxTestError
@@ -53,9 +53,9 @@ struct SyntaxTestError
 class SyntaxTest
 {
 public:
-	// static std::unique_ptr<TestCase> create(Config const& _config)
+	// static std::unique_ptr<TestCase> create(dev::solidity::Config const& _config)
 	// { return std::make_unique<SyntaxTest>(_config.filename, _config.evmVersion); }
-	SyntaxTest(std::string const& _filename, langutil::EVMVersion _evmVersion);
+	SyntaxTest(std::string const& _filename);
 
 	bool run(std::ostream& _stream, std::string const& _linePrefix = "", bool _formatted = false);
 
@@ -67,15 +67,12 @@ public:
 	}
 
 	static std::string errorMessage(Exception const& _e);
-protected:
-	static void printErrorList(
-		std::ostream& _stream,
-		std::vector<SyntaxTestError> const& _errors,
-		std::string const& _linePrefix,
-		bool _formatted = false
-	);
 
-	virtual bool printExpectationAndError(std::ostream& _stream, std::string const& _linePrefix = "", bool _formatted = false);
+	// FIXME: Duplicated from TestCase.
+	std::string parseSourceAndSettings(std::istream& _file);
+	/// Parsed settings.
+	std::map<std::string, std::string> m_settings;
+	static void expect(std::string::iterator& _it, std::string::iterator _end, std::string::value_type _c);
 
 	static std::vector<SyntaxTestError> parseExpectations(std::istream& _stream);
 
@@ -83,6 +80,34 @@ protected:
 	std::vector<SyntaxTestError> m_expectations;
 	std::vector<SyntaxTestError> m_errorList;
 	langutil::EVMVersion const m_evmVersion;
+
+
+	template<typename IteratorType>
+	static void skipWhitespace(IteratorType& _it, IteratorType _end)
+	{
+		while (_it != _end && isspace(*_it))
+			++_it;
+	}
+
+	template<typename IteratorType>
+	static void skipSlashes(IteratorType& _it, IteratorType _end)
+	{
+		while (_it != _end && *_it == '/')
+			++_it;
+	}
+
+	virtual bool printExpectationAndError(std::ostream& _stream, std::string const& _linePrefix = "", bool _formatted = false);
+
+protected:
+
+	static void printErrorList(
+		std::ostream& _stream,
+		std::vector<SyntaxTestError> const& _errors,
+		std::string const& _linePrefix,
+		bool _formatted = false
+	);
+
+
 };
 
 }

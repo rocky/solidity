@@ -90,12 +90,15 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, bool _advance)
 	Token tok = m_scanner->currentToken();
 	if (tok != _value)
 	{
-		parserError(string("Expected ") + ParserBase::tokenName(_value) + string(" but got ") + ParserBase::tokenName(tok) + string("."));
 		Token token = m_scanner->currentToken();
 		while (token != _value && token != Token::EOS)
 			token = m_scanner->next();
+		std::string tokenName = ParserBase::tokenName(_value);
+		std::string mess = string("Expected ") + tokenName + string(" but got ") + ParserBase::tokenName(tok) + string(". ");
 		if (token == Token::EOS)
-			fatalParserError("Can not find token to synchronize to.");
+			parserError(mess + "Cannot find " + tokenName + " to synchronize to.");
+		else
+			parserError(mess + "Skipping to next " + tokenName + ".");
 	}
 	if (_advance)
 		m_scanner->next();

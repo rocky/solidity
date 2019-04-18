@@ -18,6 +18,7 @@
 #pragma once
 
 #include <testparser/TestCase.h>
+#include <testparser/libsolidityp0/SyntaxTest.h>
 
 #include <boost/filesystem.hpp>
 
@@ -25,7 +26,7 @@ namespace dev
 {
 namespace solidity
 {
-namespace test
+namespace testparser
 {
 
 /** Container for all information regarding a testsuite */
@@ -44,7 +45,8 @@ struct Testsuite
 Testsuite const g_interactiveTestsuites[] = {
 /*
 	Title                  Path            Subpath                SMT    IPC    Creator function */
-	{"Semantic",            "libsolidity", "semanticTests",       false, true,  &SemanticTest::create},
+// rocky
+//	{"Semantic",            "libsolidity", "semanticTests",       false, true,  &SemanticTest::create},
 };
 
 }

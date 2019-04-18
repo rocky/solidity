@@ -15,6 +15,7 @@
 	along with solidity.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <testp0/libsolidityp0/Common.h>
 #include <testp0/libsolidityp0/SyntaxTest.h>
 #include <testp0/Options.h>
 #include <testp0/TestCase.h>
@@ -27,7 +28,7 @@
 
 using namespace langutil;
 using namespace dev::solidity;
-using namespace dev::solidity::test;
+using namespace dev::solidity::testparser;
 using namespace dev::formatting;
 using namespace dev;
 using namespace std;
@@ -37,39 +38,85 @@ using namespace boost::unit_test;
 namespace
 {
 
-// int parseUnsignedInteger(string::iterator& _it, string::iterator _end)
-// {
-// 	if (_it == _end || !isdigit(*_it))
-// 		throw runtime_error("Invalid test expectation. Source location expected.");
-// 	int result = 0;
-// 	while (_it != _end && isdigit(*_it))
-// 	{
-// 		result *= 10;
-// 		result += *_it - '0';
-// 		++_it;
-// 	}
-// 	return result;
-// }
+int parseUnsignedInteger(string::iterator& _it, string::iterator _end)
+{
+	if (_it == _end || !isdigit(*_it))
+		throw runtime_error("Invalid test expectation. Source location expected.");
+	int result = 0;
+	while (_it != _end && isdigit(*_it))
+	{
+		result *= 10;
+		result += *_it - '0';
+		++_it;
+	}
+	return result;
+}
+
+// Copied from SolidityParser.cpp
+ASTPointer<ContractDefinition> parseText(std::string const& _source, ErrorList& _errors)
+{
+	ErrorReporter errorReporter(_errors);
+	ASTPointer<SourceUnit> sourceUnit = Parser(errorReporter).parse(std::make_shared<Scanner>(CharStream(_source, "")));
+	if (!sourceUnit)
+		return ASTPointer<ContractDefinition>();
+	for (ASTPointer<ASTNode> const& node: sourceUnit->nodes())
+		if (ASTPointer<ContractDefinition> contract = dynamic_pointer_cast<ContractDefinition>(node))
+			return contract;
+	BOOST_FAIL("No contract found in source.");
+	return ASTPointer<ContractDefinition>();
+}
 
 }
 
-SyntaxTest::SyntaxTest(string const& _filename, langutil::EVMVersion _evmVersion): m_evmVersion(_evmVersion)
+// Duplicated from TestCase.cpp
+string SyntaxTest::parseSourceAndSettings(istream& _stream)
+{
+	string source;
+	string line;
+	static string const settingsDelimiter("// ====");
+	static string const delimiter("// ----");
+	bool sourcePart = true;
+	while (getline(_stream, line))
+	{
+		if (boost::algorithm::starts_with(line, delimiter))
+			break;
+		else if (boost::algorithm::starts_with(line, settingsDelimiter))
+			sourcePart = false;
+		else if (sourcePart)
+			source += line + "\n";
+		else if (boost::algorithm::starts_with(line, "// "))
+		{
+			size_t colon = line.find(':');
+			if (colon == string::npos)
+				throw runtime_error(string("Expected \":\" inside setting."));
+			string key = line.substr(3, colon - 3);
+			string value = line.substr(colon + 1);
+			boost::algorithm::trim(key);
+			boost::algorithm::trim(value);
+			m_settings[key] = value;
+		}
+		else
+			throw runtime_error(string("Expected \"//\" or \"// ---\" to terminate settings and source."));
+	}
+	return source;
+}
+
+SyntaxTest::SyntaxTest(string const& _filename)
 {
 	ifstream file(_filename);
 	if (!file)
 		BOOST_THROW_EXCEPTION(runtime_error("Cannot open test contract: \"" + _filename + "\"."));
 	file.exceptions(ios::badbit);
 
-	// rocky
-	// m_source = parseSourceAndSettings(file);
-	// m_expectations = parseExpectations(file);
+	m_source = parseSourceAndSettings(file);
+	m_expectations = parseExpectations(file);
 }
 
 bool SyntaxTest::run(ostream& _stream, string const& _linePrefix, bool _formatted)
 {
 	string const versionPragma = "pragma solidity >=0.0;\n";
 
-	// rocky
+	// rocky: requires "AnalysisFrameWork which we don't have
 	// m_compiler.reset();
 	// m_compiler.setSources({{"", versionPragma + m_source}});
 	// m_compiler.setEVMVersion(m_evmVersion);
@@ -77,24 +124,37 @@ bool SyntaxTest::run(ostream& _stream, string const& _linePrefix, bool _formatte
 	// if (m_compiler.parse())
 	// 	m_compiler.analyze();
 
+	// The above code is replaced below try/catch.
+	ErrorList errors;
+	try
+	{
+		parseText(m_source, errors);
+	}
+	catch (FatalError const& /*_exception*/)
+	{
+		// no-op
+	}
+
+
 	// for (auto const& currentError: filterErrors(m_compiler.errors(), true))
-	// {
-	// 	int locationStart = -1, locationEnd = -1;
-	// 	if (auto location = boost::get_error_info<errinfo_sourceLocation>(*currentError))
-	// 	{
-	// 		// ignore the version pragma inserted by the testing tool when calculating locations.
-	// 		if (location->start >= static_cast<int>(versionPragma.size()))
-	// 			locationStart = location->start - versionPragma.size();
-	// 		if (location->end >= static_cast<int>(versionPragma.size()))
-	// 			locationEnd = location->end - versionPragma.size();
-	// 	}
-	// 	m_errorList.emplace_back(SyntaxTestError{
-	// 		currentError->typeName(),
-	// 		errorMessage(*currentError),
-	// 		locationStart,
-	// 		locationEnd
-	// 	});
-	// }
+	for (auto const& currentError: errors)
+	{
+		int locationStart = -1, locationEnd = -1;
+		if (auto location = boost::get_error_info<errinfo_sourceLocation>(*currentError))
+		{
+			// ignore the version pragma inserted by the testing tool when calculating locations.
+			if (location->start >= static_cast<int>(versionPragma.size()))
+				locationStart = location->start - versionPragma.size();
+			if (location->end >= static_cast<int>(versionPragma.size()))
+				locationEnd = location->end - versionPragma.size();
+		}
+		m_errorList.emplace_back(SyntaxTestError{
+			currentError->typeName(),
+			errorMessage(*currentError),
+			locationStart,
+			locationEnd
+		});
+	}
 
 	return printExpectationAndError(_stream, _linePrefix, _formatted);
 }
@@ -209,44 +269,50 @@ vector<SyntaxTestError> SyntaxTest::parseExpectations(istream& _stream)
 	{
 		auto it = line.begin();
 
-		it = it;
-		// skipSlashes(it, line.end());
-		// skipWhitespace(it, line.end());
+		skipSlashes(it, line.end());
+		skipWhitespace(it, line.end());
 
-	// 	if (it == line.end()) continue;
+		if (it == line.end()) continue;
 
-	// 	auto typeBegin = it;
-	// 	while (it != line.end() && *it != ':')
-	// 		++it;
-	// 	string errorType(typeBegin, it);
+		auto typeBegin = it;
+		while (it != line.end() && *it != ':')
+			++it;
+		string errorType(typeBegin, it);
 
-	// 	// skip colon
-	// 	if (it != line.end()) it++;
+		// skip colon
+		if (it != line.end()) it++;
 
-	// 	skipWhitespace(it, line.end());
+		skipWhitespace(it, line.end());
 
-	// 	int locationStart = -1;
-	// 	int locationEnd = -1;
+		int locationStart = -1;
+		int locationEnd = -1;
 
-	// 	if (it != line.end() && *it == '(')
-	// 	{
-	// 		++it;
-	// 		locationStart = parseUnsignedInteger(it, line.end());
-	// 		expect(it, line.end(), '-');
-	// 		locationEnd = parseUnsignedInteger(it, line.end());
-	// 		expect(it, line.end(), ')');
-	// 		expect(it, line.end(), ':');
-	// 	}
+		if (it != line.end() && *it == '(')
+		{
+			++it;
+			locationStart = parseUnsignedInteger(it, line.end());
+			expect(it, line.end(), '-');
+			locationEnd = parseUnsignedInteger(it, line.end());
+			expect(it, line.end(), ')');
+			expect(it, line.end(), ':');
+		}
 
-	// 	skipWhitespace(it, line.end());
+		skipWhitespace(it, line.end());
 
-	// 	string errorMessage(it, line.end());
-	// 	expectations.emplace_back(SyntaxTestError{
-	// 		move(errorType),
-	// 		move(errorMessage),
-	// 		locationStart,
-	// 		locationEnd
-	// 	});
+		string errorMessage(it, line.end());
+		expectations.emplace_back(SyntaxTestError{
+			move(errorType),
+			move(errorMessage),
+			locationStart,
+			locationEnd
+		});
 	}
 	return expectations;
+}
+
+void SyntaxTest::expect(string::iterator& _it, string::iterator _end, string::value_type _c)
+{
+	if (_it == _end || *_it != _c)
+		throw runtime_error(string("Invalid test expectation. Expected: \"") + _c + "\".");
+	++_it;
 }

@@ -20,10 +20,13 @@
  * Unit tests for the solidity parser.
  */
 
+#include <fstream>
 #include <testp0/libsolidityp0/Common.h>
+#include <testp0/libsolidityp0/SyntaxTest.h>
 
 using namespace std;
 using namespace langutil;
+using namespace dev::solidity::testparser;
 
 namespace dev
 {
@@ -32,66 +35,26 @@ namespace solidity
 namespace testp0
 {
 
-namespace
-{
-ASTPointer<ContractDefinition> parseText(std::string const& _source, ErrorList& _errors)
-{
-	ErrorReporter errorReporter(_errors);
-	ASTPointer<SourceUnit> sourceUnit = Parser(errorReporter).parse(std::make_shared<Scanner>(CharStream(_source, "")));
-	if (!sourceUnit)
-		return ASTPointer<ContractDefinition>();
-	for (ASTPointer<ASTNode> const& node: sourceUnit->nodes())
-		if (ASTPointer<ContractDefinition> contract = dynamic_pointer_cast<ContractDefinition>(node))
-			return contract;
-	BOOST_FAIL("No contract found in source.");
-	return ASTPointer<ContractDefinition>();
-}
-
-Error getError(std::string const& _source)
-{
-	ErrorList errors;
-	try
-	{
-		parseText(_source, errors);
-	}
-	catch (FatalError const& /*_exception*/)
-	{
-		// no-op
-	}
-	Error const* error = Error::containsErrorOfType(errors, Error::Type::ParserError);
-	BOOST_REQUIRE(error);
-	return *error;
-}
-
-}
 
 BOOST_AUTO_TEST_SUITE(SolidityParserError)
 
-BOOST_AUTO_TEST_CASE(semicolon_error)
+BOOST_AUTO_TEST_CASE(solidity_parser_recovery)
 {
-	char const* text = R"(
-contract Five {
-  function five() returns(int) {
-    uint256 a;
-    a = 1
-      a = 3;
-      return 5;
-    }
-}
-	)";
-	CHECK_PARSE_ERROR(text, "Expected ';' but got identifier.");
-}
+	string const versionPragma = "pragma solidity >=0.0;\n";
+	auto parser_error_tests = {
+		"../../testp0/libsolidityp0/syntaxTests/parsing/errorRecovery/missing_stmt_semicolon.sol",
+		"../../testp0/libsolidityp0/syntaxTests/parsing/errorRecovery/semicolon_error_to_EOS.sol"
+	};
 
-
-BOOST_AUTO_TEST_CASE(semicolon_error_to_EOS)
-{
-	char const* text = R"(
-contract Five {
-  function five() returns(int) {
-    uint256 a;
-    a = 1
-	)";
-	CHECK_PARSE_ERROR(text, "Expected ';' but got end of source.");
+	for (auto const& test_file: parser_error_tests)
+	{
+		SyntaxTest testCase = SyntaxTest(test_file);
+		ifstream file(test_file);
+		std::string m_source = testCase.parseSourceAndSettings(file);
+		vector<SyntaxTestError> m_expectations = testCase.parseExpectations(file);
+		bool status = testCase.run(cerr);
+		BOOST_CHECK(status);
+	}
 }
 
 

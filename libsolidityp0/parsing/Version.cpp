@@ -34,45 +34,45 @@ using namespace std;
 
 char const* dev::solidity::VersionNumber = ETH_PROJECT_VERSION;
 
-string const dev::solidity::VersionString = "rocky testing";
-// 	string(dev::solidity::VersionNumber) +
-// 	(string(SOL_VERSION_PRERELEASE).empty() ? "" : "-" + string(SOL_VERSION_PRERELEASE)) +
-// 	(string(SOL_VERSION_BUILDINFO).empty() ? "" : "+" + string(SOL_VERSION_BUILDINFO));
+string const dev::solidity::VersionString =
+	string(dev::solidity::VersionNumber) +
+	(string(SOL_VERSION_PRERELEASE).empty() ? "" : "-" + string(SOL_VERSION_PRERELEASE)) +
+	(string(SOL_VERSION_BUILDINFO).empty() ? "" : "+" + string(SOL_VERSION_BUILDINFO));
 
-// string const dev::solidity::VersionStringStrict =
-// 	string(dev::solidity::VersionNumber) +
-// 	(string(SOL_VERSION_PRERELEASE).empty() ? "" : "-" + string(SOL_VERSION_PRERELEASE)) +
-// 	(string(SOL_VERSION_COMMIT).empty() ? "" : "+" + string(SOL_VERSION_COMMIT));
+string const dev::solidity::VersionStringStrict =
+	string(dev::solidity::VersionNumber) +
+	(string(SOL_VERSION_PRERELEASE).empty() ? "" : "-" + string(SOL_VERSION_PRERELEASE)) +
+	(string(SOL_VERSION_COMMIT).empty() ? "" : "+" + string(SOL_VERSION_COMMIT));
 
-// bytes dev::solidity::binaryVersion()
-// {
-// 	bytes ret{0};
-// 	size_t i = 0;
-// 	auto parseDecimal = [&]()
-// 	{
-// 		size_t ret = 0;
-// 		solAssert('0' <= VersionString[i] && VersionString[i] <= '9', "");
-// 		for (; i < VersionString.size() && '0' <= VersionString[i] && VersionString[i] <= '9'; ++i)
-// 			ret = ret * 10 + (VersionString[i] - '0');
-// 		return ret;
-// 	};
-// 	ret.push_back(uint8_t(parseDecimal()));
-// 	solAssert(i < VersionString.size() && VersionString[i] == '.', "");
-// 	++i;
-// 	ret.push_back(uint8_t(parseDecimal()));
-// 	solAssert(i < VersionString.size() && VersionString[i] == '.', "");
-// 	++i;
-// 	ret.push_back(uint8_t(parseDecimal()));
-// 	solAssert(i < VersionString.size() && (VersionString[i] == '-' || VersionString[i] == '+'), "");
-// 	++i;
-// 	size_t commitpos = VersionString.find("commit.");
-// 	solAssert(commitpos != string::npos, "");
-// 	i = commitpos + 7;
-// 	solAssert(i + 7 < VersionString.size(), "");
-// 	bytes commitHash = fromHex(VersionString.substr(i, 8));
-// 	solAssert(!commitHash.empty(), "");
-// 	ret += commitHash;
-// 	solAssert(ret.size() == 1 + 3 + 4, "");
+bytes dev::solidity::binaryVersion()
+{
+	bytes ret{0};
+	size_t i = 0;
+	auto parseDecimal = [&]()
+	{
+		size_t ret = 0;
+		solAssert('0' <= VersionString[i] && VersionString[i] <= '9', "");
+		for (; i < VersionString.size() && '0' <= VersionString[i] && VersionString[i] <= '9'; ++i)
+			ret = ret * 10 + (VersionString[i] - '0');
+		return ret;
+	};
+	ret.push_back(uint8_t(parseDecimal()));
+	solAssert(i < VersionString.size() && VersionString[i] == '.', "");
+	++i;
+	ret.push_back(uint8_t(parseDecimal()));
+	solAssert(i < VersionString.size() && VersionString[i] == '.', "");
+	++i;
+	ret.push_back(uint8_t(parseDecimal()));
+	solAssert(i < VersionString.size() && (VersionString[i] == '-' || VersionString[i] == '+'), "");
+	++i;
+	size_t commitpos = VersionString.find("commit.");
+	solAssert(commitpos != string::npos, "");
+	i = commitpos + 7;
+	solAssert(i + 7 < VersionString.size(), "");
+	bytes commitHash = fromHex(VersionString.substr(i, 8));
+	solAssert(!commitHash.empty(), "");
+	ret += commitHash;
+	solAssert(ret.size() == 1 + 3 + 4, "");
 
-// 	return ret;
-// }
+	return ret;
+}
