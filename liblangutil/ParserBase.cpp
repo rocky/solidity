@@ -91,14 +91,15 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, bool _advance)
 	if (tok != _value)
 	{
 		Token token = m_scanner->currentToken();
+		SourceLocation errorLoc = SourceLocation{position(), endPosition(), source()};
 		while (token != _value && token != Token::EOS)
 			token = m_scanner->next();
 		std::string tokenName = ParserBase::tokenName(_value);
 		std::string mess = string("Expected ") + tokenName + string(" but got ") + ParserBase::tokenName(tok) + string(". ");
 		if (token == Token::EOS)
-			fatalParserError("");
+			parserError(errorLoc, mess);
 		else
-			parserError(mess + "Skipping to next " + tokenName + ".");
+			parserError(errorLoc, mess + "Skipping to next " + tokenName + ".");
 	}
 	if (_advance)
 		m_scanner->next();

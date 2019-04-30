@@ -22,10 +22,10 @@
 
 #include <libsolidityp0/parsing/Parser.h>
 
-#include <libsolidityp0/parsing/SemVerHandler.h>
 #include <libsolidityp0/parsing/Version.h>
 #include <liblangutil/ErrorReporter.h>
 #include <liblangutil/Scanner.h>
+#include <liblangutil/SemVerHandler.h>
 #include <liblangutil/SourceLocation.h>
 #include <cctype>
 #include <vector>
@@ -255,57 +255,67 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 {
 	RecursionGuard recursionGuard(*this);
 	ASTNodeFactory nodeFactory(*this);
+	ASTPointer<ASTString> name;
 	ASTPointer<ASTString> docString;
-	if (m_scanner->currentCommentLiteral() != "")
-		docString = make_shared<ASTString>(m_scanner->currentCommentLiteral());
-	ContractDefinition::ContractKind contractKind = parseContractKind();
-	ASTPointer<ASTString> name = expectIdentifierToken();
 	vector<ASTPointer<InheritanceSpecifier>> baseContracts;
-	if (m_scanner->currentToken() == Token::Is)
-		do
-		{
-			m_scanner->next();
-			baseContracts.push_back(parseInheritanceSpecifier());
-		}
-		while (m_scanner->currentToken() == Token::Comma);
 	vector<ASTPointer<ASTNode>> subNodes;
-	expectToken(Token::LBrace);
-	while (true)
+	ContractDefinition::ContractKind contractKind;
+	try
 	{
-		Token currentTokenValue = m_scanner->currentToken();
-		if (currentTokenValue == Token::RBrace)
-			break;
-		else if (currentTokenValue == Token::Function || currentTokenValue == Token::Constructor)
-			// This can be a function or a state variable of function type (especially
-			// complicated to distinguish fallback function from function type state variable)
-			subNodes.push_back(parseFunctionDefinitionOrFunctionTypeStateVariable());
-		else if (currentTokenValue == Token::Struct)
-			subNodes.push_back(parseStructDefinition());
-		else if (currentTokenValue == Token::Enum)
-			subNodes.push_back(parseEnumDefinition());
-		else if (
-			currentTokenValue == Token::Identifier ||
-			currentTokenValue == Token::Mapping ||
-			TokenTraits::isElementaryTypeName(currentTokenValue)
-		)
+		if (m_scanner->currentCommentLiteral() != "")
+			docString = make_shared<ASTString>(m_scanner->currentCommentLiteral());
+		contractKind = parseContractKind();
+		name = expectIdentifierToken();
+		if (m_scanner->currentToken() == Token::Is)
+			do
+			{
+				m_scanner->next();
+				baseContracts.push_back(parseInheritanceSpecifier());
+			}
+			while (m_scanner->currentToken() == Token::Comma);
+		expectToken(Token::LBrace);
+		while (true)
 		{
-			VarDeclParserOptions options;
-			options.isStateVariable = true;
-			options.allowInitialValue = true;
-			subNodes.push_back(parseVariableDeclaration(options));
-			expectToken(Token::Semicolon);
+			Token currentTokenValue = m_scanner->currentToken();
+			if (currentTokenValue == Token::RBrace)
+				break;
+			else if (currentTokenValue == Token::Function || currentTokenValue == Token::Constructor)
+				// This can be a function or a state variable of function type (especially
+				// complicated to distinguish fallback function from function type state variable)
+				subNodes.push_back(parseFunctionDefinitionOrFunctionTypeStateVariable());
+			else if (currentTokenValue == Token::Struct)
+				subNodes.push_back(parseStructDefinition());
+			else if (currentTokenValue == Token::Enum)
+				subNodes.push_back(parseEnumDefinition());
+			else if (
+				currentTokenValue == Token::Identifier ||
+				currentTokenValue == Token::Mapping ||
+				TokenTraits::isElementaryTypeName(currentTokenValue)
+			)
+			{
+				VarDeclParserOptions options;
+				options.isStateVariable = true;
+				options.allowInitialValue = true;
+				subNodes.push_back(parseVariableDeclaration(options));
+				expectToken(Token::Semicolon);
+			}
+			else if (currentTokenValue == Token::Modifier)
+				subNodes.push_back(parseModifierDefinition());
+			else if (currentTokenValue == Token::Event)
+				subNodes.push_back(parseEventDefinition());
+			else if (currentTokenValue == Token::Using)
+				subNodes.push_back(parseUsingDirective());
+			else
+				fatalParserError(string("Function, variable, struct or modifier declaration expected."));
 		}
-		else if (currentTokenValue == Token::Modifier)
-			subNodes.push_back(parseModifierDefinition());
-		else if (currentTokenValue == Token::Event)
-			subNodes.push_back(parseEventDefinition());
-		else if (currentTokenValue == Token::Using)
-			subNodes.push_back(parseUsingDirective());
-		else
-			fatalParserError(string("Function, variable, struct or modifier declaration expected."));
+		nodeFactory.markEndPosition();
 	}
-	nodeFactory.markEndPosition();
-	expectToken(Token::RBrace);
+	catch (FatalError const&)
+	{
+		if (!m_errorReporter.hasErrors())
+			throw; // Something is weird here, rather throw again.
+	}
+	expectTokenOrConsumeUntil(Token::RBrace);
 	return nodeFactory.createNode<ContractDefinition>(
 		name,
 		docString,
