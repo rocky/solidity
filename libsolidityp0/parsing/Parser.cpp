@@ -102,7 +102,7 @@ ASTPointer<SourceUnit> Parser::parse(shared_ptr<Scanner> const& _scanner)
 	}
 	catch (FatalError const&)
 	{
-		if (m_errorReporter.errors().empty())
+		if (!m_errorReporter.hasErrors())
 			throw; // Something is weird here, rather throw again.
 		return nullptr;
 	}
