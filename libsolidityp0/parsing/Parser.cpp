@@ -100,7 +100,7 @@ ASTPointer<SourceUnit> Parser::parse(shared_ptr<Scanner> const& _scanner)
 		solAssert(m_recursionDepth == 0, "");
 		return nodeFactory.createNode<SourceUnit>(nodes);
 	}
-	catch (ParserError const&)
+	catch (FatalError const&)
 	{
 		if (!m_errorReporter.hasErrors())
 			throw; // Something is weird here, rather throw again.
@@ -115,11 +115,11 @@ void Parser::parsePragmaVersion(SourceLocation const& _location, vector<Token> c
 	static SemVerVersion const currentVersion{string(VersionString)};
 	// FIXME: only match for major version incompatibility
 	if (!matchExpression.matches(currentVersion))
-		m_errorReporter.parserError(
+		m_errorReporter.fatalParserError(
 			_location,
 			"Source file requires different compiler version (current compiler is " +
 			string(VersionString) + " - note that nightly builds are considered to be "
-			"strictly less than the released version", true
+			"strictly less than the released version"
 		);
 }
 
@@ -255,67 +255,57 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 {
 	RecursionGuard recursionGuard(*this);
 	ASTNodeFactory nodeFactory(*this);
-	ASTPointer<ASTString> name = make_shared<ASTString>("?NoContractName");
-	ASTPointer<ASTString> docString = make_shared<ASTString>("");
+	ASTPointer<ASTString> docString;
+	if (m_scanner->currentCommentLiteral() != "")
+		docString = make_shared<ASTString>(m_scanner->currentCommentLiteral());
+	ContractDefinition::ContractKind contractKind = parseContractKind();
+	ASTPointer<ASTString> name = expectIdentifierToken();
 	vector<ASTPointer<InheritanceSpecifier>> baseContracts;
-	vector<ASTPointer<ASTNode>> subNodes;
-	ContractDefinition::ContractKind contractKind;
-	try
-	{
-		if (m_scanner->currentCommentLiteral() != "")
-			docString = make_shared<ASTString>(m_scanner->currentCommentLiteral());
-		contractKind = parseContractKind();
-		name = expectIdentifierToken();
-		if (m_scanner->currentToken() == Token::Is)
-			do
-			{
-				m_scanner->next();
-				baseContracts.push_back(parseInheritanceSpecifier());
-			}
-			while (m_scanner->currentToken() == Token::Comma);
-		expectToken(Token::LBrace);
-		while (true)
+	if (m_scanner->currentToken() == Token::Is)
+		do
 		{
-			Token currentTokenValue = m_scanner->currentToken();
-			if (currentTokenValue == Token::RBrace)
-				break;
-			else if (currentTokenValue == Token::Function || currentTokenValue == Token::Constructor)
-				// This can be a function or a state variable of function type (especially
-				// complicated to distinguish fallback function from function type state variable)
-				subNodes.push_back(parseFunctionDefinitionOrFunctionTypeStateVariable());
-			else if (currentTokenValue == Token::Struct)
-				subNodes.push_back(parseStructDefinition());
-			else if (currentTokenValue == Token::Enum)
-				subNodes.push_back(parseEnumDefinition());
-			else if (
-				currentTokenValue == Token::Identifier ||
-				currentTokenValue == Token::Mapping ||
-				TokenTraits::isElementaryTypeName(currentTokenValue)
-			)
-			{
-				VarDeclParserOptions options;
-				options.isStateVariable = true;
-				options.allowInitialValue = true;
-				subNodes.push_back(parseVariableDeclaration(options));
-				expectToken(Token::Semicolon);
-			}
-			else if (currentTokenValue == Token::Modifier)
-				subNodes.push_back(parseModifierDefinition());
-			else if (currentTokenValue == Token::Event)
-				subNodes.push_back(parseEventDefinition());
-			else if (currentTokenValue == Token::Using)
-				subNodes.push_back(parseUsingDirective());
-			else
-				fatalParserError(string("Function, variable, struct or modifier declaration expected."));
+			m_scanner->next();
+			baseContracts.push_back(parseInheritanceSpecifier());
 		}
-		nodeFactory.markEndPosition();
-	}
-	catch (ParserError const&)
+		while (m_scanner->currentToken() == Token::Comma);
+	vector<ASTPointer<ASTNode>> subNodes;
+	expectToken(Token::LBrace);
+	while (true)
 	{
-		if (!m_errorReporter.hasErrors())
-			throw; // Something is weird here, rather throw again.
+		Token currentTokenValue = m_scanner->currentToken();
+		if (currentTokenValue == Token::RBrace)
+			break;
+		else if (currentTokenValue == Token::Function || currentTokenValue == Token::Constructor)
+			// This can be a function or a state variable of function type (especially
+			// complicated to distinguish fallback function from function type state variable)
+			subNodes.push_back(parseFunctionDefinitionOrFunctionTypeStateVariable());
+		else if (currentTokenValue == Token::Struct)
+			subNodes.push_back(parseStructDefinition());
+		else if (currentTokenValue == Token::Enum)
+			subNodes.push_back(parseEnumDefinition());
+		else if (
+			currentTokenValue == Token::Identifier ||
+			currentTokenValue == Token::Mapping ||
+			TokenTraits::isElementaryTypeName(currentTokenValue)
+		)
+		{
+			VarDeclParserOptions options;
+			options.isStateVariable = true;
+			options.allowInitialValue = true;
+			subNodes.push_back(parseVariableDeclaration(options));
+			expectToken(Token::Semicolon);
+		}
+		else if (currentTokenValue == Token::Modifier)
+			subNodes.push_back(parseModifierDefinition());
+		else if (currentTokenValue == Token::Event)
+			subNodes.push_back(parseEventDefinition());
+		else if (currentTokenValue == Token::Using)
+			subNodes.push_back(parseUsingDirective());
+		else
+			fatalParserError(string("Function, variable, struct or modifier declaration expected."));
 	}
-	expectTokenOrConsumeUntil(Token::RBrace);
+	nodeFactory.markEndPosition();
+	expectToken(Token::RBrace);
 	return nodeFactory.createNode<ContractDefinition>(
 		name,
 		docString,
@@ -1039,7 +1029,7 @@ ASTPointer<Statement> Parser::parseStatement()
 		statement = parseSimpleStatement(docString);
 		break;
 	}
-	expectTokenOrConsumeUntil(Token::Semicolon);
+	expectToken(Token::Semicolon);
 	return statement;
 }
 
@@ -1136,7 +1126,7 @@ ASTPointer<EmitStatement> Parser::parseEmitStatement(ASTPointer<ASTString> const
 	ASTNodeFactory eventCallNodeFactory(*this);
 
 	if (m_scanner->currentToken() != Token::Identifier)
-		parserError("Expected event name or path.", true);
+		fatalParserError("Expected event name or path.");
 
 	IndexAccessedPath iap;
 	while (true)
@@ -1587,7 +1577,7 @@ ASTPointer<Expression> Parser::parsePrimaryExpression()
 		break;
 	}
 	case Token::Illegal:
-		parserError(to_string(m_scanner->currentError()), true);
+		fatalParserError(to_string(m_scanner->currentError()));
 		break;
 	default:
 		if (TokenTraits::isElementaryTypeName(token))

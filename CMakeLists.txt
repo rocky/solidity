@@ -51,18 +51,12 @@ configure_project(TESTS)
 add_subdirectory(libdevcore)
 add_subdirectory(liblangutil)
 
-if (PARSE_ONLY)
-	# Include tests for phase 0
-	include_directories(${PROJECT_SOURCE_DIR})
-	add_subdirectory(libsolidityp0)
-	add_subdirectory(testp0)
-else()
-	# solc isn't needed if we are only parsing
-	add_subdirectory(solc)
-	add_subdirectory(libsolidity)
-	add_subdirectory(libyul)
-	add_subdirectory(libevmasm)
-endif()
+# Include tests for phase 0
+include_directories(${PROJECT_SOURCE_DIR})
+add_subdirectory(libsolidityp0)
+add_subdirectory(testp0)
+
+# add_subdirectory(solc)
 
 if (NOT EMSCRIPTEN)
 	if (LLL)
