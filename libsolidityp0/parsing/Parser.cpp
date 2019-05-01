@@ -100,7 +100,7 @@ ASTPointer<SourceUnit> Parser::parse(shared_ptr<Scanner> const& _scanner)
 		solAssert(m_recursionDepth == 0, "");
 		return nodeFactory.createNode<SourceUnit>(nodes);
 	}
-	catch (FatalError const&)
+	catch (ParserError const&)
 	{
 		if (!m_errorReporter.hasErrors())
 			throw; // Something is weird here, rather throw again.
@@ -115,11 +115,11 @@ void Parser::parsePragmaVersion(SourceLocation const& _location, vector<Token> c
 	static SemVerVersion const currentVersion{string(VersionString)};
 	// FIXME: only match for major version incompatibility
 	if (!matchExpression.matches(currentVersion))
-		m_errorReporter.fatalParserError(
+		m_errorReporter.parserError(
 			_location,
 			"Source file requires different compiler version (current compiler is " +
 			string(VersionString) + " - note that nightly builds are considered to be "
-			"strictly less than the released version"
+			"strictly less than the released version", true
 		);
 }
 
@@ -255,8 +255,8 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 {
 	RecursionGuard recursionGuard(*this);
 	ASTNodeFactory nodeFactory(*this);
-	ASTPointer<ASTString> name;
-	ASTPointer<ASTString> docString;
+	ASTPointer<ASTString> name = make_shared<ASTString>("?NoContractName");
+	ASTPointer<ASTString> docString = make_shared<ASTString>("");
 	vector<ASTPointer<InheritanceSpecifier>> baseContracts;
 	vector<ASTPointer<ASTNode>> subNodes;
 	ContractDefinition::ContractKind contractKind;
@@ -310,7 +310,7 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 		}
 		nodeFactory.markEndPosition();
 	}
-	catch (FatalError const&)
+	catch (ParserError const&)
 	{
 		if (!m_errorReporter.hasErrors())
 			throw; // Something is weird here, rather throw again.
@@ -1136,7 +1136,7 @@ ASTPointer<EmitStatement> Parser::parseEmitStatement(ASTPointer<ASTString> const
 	ASTNodeFactory eventCallNodeFactory(*this);
 
 	if (m_scanner->currentToken() != Token::Identifier)
-		fatalParserError("Expected event name or path.");
+		parserError("Expected event name or path.", true);
 
 	IndexAccessedPath iap;
 	while (true)
@@ -1587,7 +1587,7 @@ ASTPointer<Expression> Parser::parsePrimaryExpression()
 		break;
 	}
 	case Token::Illegal:
-		fatalParserError(to_string(m_scanner->currentError()));
+		parserError(to_string(m_scanner->currentError()), true);
 		break;
 	default:
 		if (TokenTraits::isElementaryTypeName(token))

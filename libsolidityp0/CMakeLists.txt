@@ -16,8 +16,6 @@ set(sources
 	parsing/DocStringParser.h
 	parsing/Parser.cpp
 	parsing/Parser.h
-	parsing/SemVerHandler.cpp
-	parsing/SemVerHandler.h
 	parsing/Token.h
 	parsing/Version.cpp
 	parsing/Version.h
