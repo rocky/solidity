@@ -21,9 +21,11 @@
  */
 #pragma once
 
+#ifdef ROCKY_REINSTATED
 #include <libsolidity/interface/CompilerStack.h>
 #include <libyul/AssemblyStack.h>
 #include <liblangutil/EVMVersion.h>
+#endif
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem/path.hpp>
@@ -55,9 +57,11 @@ private:
 	/// @returns the ``// <identifier> -> name`` hint for library placeholders.
 	static std::string libraryPlaceholderHint(std::string const& _libraryName);
 	/// @returns the full object with library placeholder hints in hex.
+#ifdef ROCKY_REINSTATED
 	static std::string objectWithLinkRefsHex(eth::LinkerObject const& _obj);
 
 	bool assemble(yul::AssemblyStack::Language _language, yul::AssemblyStack::Machine _targetMachine, bool _optimize);
+#endif
 
 	void outputCompilationResults();
 
@@ -100,16 +104,20 @@ private:
 	boost::program_options::variables_map m_args;
 	/// map of input files to source code strings
 	std::map<std::string, std::string> m_sourceCodes;
+#ifdef ROCKY_REINSTATED
 	/// list of remappings
 	std::vector<dev::solidity::CompilerStack::Remapping> m_remappings;
+#endif
 	/// list of allowed directories to read files from
 	std::vector<boost::filesystem::path> m_allowedDirectories;
+#ifdef ROCKY_REINSTATED
 	/// map of library names to addresses
 	std::map<std::string, h160> m_libraries;
 	/// Solidity compiler stack
 	std::unique_ptr<dev::solidity::CompilerStack> m_compiler;
 	/// EVM version to use
 	langutil::EVMVersion m_evmVersion;
+#endif
 	/// Whether or not to colorize diagnostics output.
 	bool m_coloredOutput = true;
 };

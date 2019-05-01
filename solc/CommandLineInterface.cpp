@@ -21,6 +21,7 @@
  * Solidity command line interface.
  */
 #include <solc/CommandLineInterface.h>
+#include <libdevcore/CommonIO.h>
 
 #include "solidity/BuildInfo.h"
 #include "license.h"
@@ -73,6 +74,8 @@
 
 using namespace std;
 using namespace langutil;
+using namespace dev::solidity;
+using namespace dev;
 namespace po = boost::program_options;
 
 namespace dev
@@ -235,6 +238,7 @@ static void license()
 	exit(0);
 }
 
+
 static bool needsHumanTargetedStdout(po::variables_map const& _args)
 {
 	if (_args.count(g_argGas))
@@ -259,10 +263,12 @@ static bool needsHumanTargetedStdout(po::variables_map const& _args)
 	return false;
 }
 
+
 void CommandLineInterface::handleBinary(string const& _contract)
 {
 	if (m_args.count(g_argBinary))
 	{
+#ifdef ROCKY_REINSTATED
 		if (m_args.count(g_argOutputDir))
 			createFile(m_compiler->filesystemFriendlyName(_contract) + ".bin", objectWithLinkRefsHex(m_compiler->object(_contract)));
 		else
@@ -280,11 +286,15 @@ void CommandLineInterface::handleBinary(string const& _contract)
 			sout() << "Binary of the runtime part: " << endl;
 			sout() << objectWithLinkRefsHex(m_compiler->runtimeObject(_contract)) << endl;
 		}
+#else
+		sout () << "binary not handled here: " << _contract << endl;
+#endif
 	}
 }
 
 void CommandLineInterface::handleOpcode(string const& _contract)
 {
+#ifdef ROCKY_REINSTATED
 	if (m_args.count(g_argOutputDir))
 		createFile(m_compiler->filesystemFriendlyName(_contract) + ".opcode", dev::eth::disassemble(m_compiler->object(_contract).bytecode));
 	else
@@ -293,10 +303,14 @@ void CommandLineInterface::handleOpcode(string const& _contract)
 		sout() << dev::eth::disassemble(m_compiler->object(_contract).bytecode);
 		sout() << endl;
 	}
+#else
+	sout () << "Opcode not handled here: " << _contract << endl;
+#endif
 }
 
 void CommandLineInterface::handleIR(string const& _contractName)
 {
+#ifdef ROCKY_REINSTATED
 	if (m_args.count(g_argIR))
 	{
 		if (m_args.count(g_argOutputDir))
@@ -307,18 +321,27 @@ void CommandLineInterface::handleIR(string const& _contractName)
 			sout() << m_compiler->yulIR(_contractName) << endl;
 		}
 	}
+#else
+	sout () << "IR not handled here: " << _contractName << endl;
+
+#endif
 }
 
 void CommandLineInterface::handleBytecode(string const& _contract)
 {
+#ifdef ROCKY_REINSTATED
 	if (m_args.count(g_argOpcodes))
 		handleOpcode(_contract);
 	if (m_args.count(g_argBinary) || m_args.count(g_argBinaryRuntime))
 		handleBinary(_contract);
+#else
+	sout () << "Bytecode not handled here: " << _contract;
+#endif
 }
 
 void CommandLineInterface::handleSignatureHashes(string const& _contract)
 {
+#ifdef ROCKY_REINSTATED
 	if (!m_args.count(g_argSignatureHashes))
 		return;
 
@@ -331,10 +354,14 @@ void CommandLineInterface::handleSignatureHashes(string const& _contract)
 		createFile(m_compiler->filesystemFriendlyName(_contract) + ".signatures", out);
 	else
 		sout() << "Function signatures: " << endl << out;
+#else
+	sout () << "Function signature not handled here: " << _contract << endl;
+#endif
 }
 
 void CommandLineInterface::handleMetadata(string const& _contract)
 {
+#ifdef ROCKY_REINSTATED
 	if (!m_args.count(g_argMetadata))
 		return;
 
@@ -343,10 +370,14 @@ void CommandLineInterface::handleMetadata(string const& _contract)
 		createFile(m_compiler->filesystemFriendlyName(_contract) + "_meta.json", data);
 	else
 		sout() << "Metadata: " << endl << data << endl;
+#else
+	sout () << "Metadata not handled here: " << _contract << endl;
+#endif
 }
 
 void CommandLineInterface::handleABI(string const& _contract)
 {
+#ifdef ROCKY_REINSTATED
 	if (!m_args.count(g_argAbi))
 		return;
 
@@ -355,10 +386,14 @@ void CommandLineInterface::handleABI(string const& _contract)
 		createFile(m_compiler->filesystemFriendlyName(_contract) + ".abi", data);
 	else
 		sout() << "Contract JSON ABI " << endl << data << endl;
+#else
+	sout () << "Contract JSON API not handled here: " << _contract;
+#endif
 }
 
 void CommandLineInterface::handleNatspec(bool _natspecDev, string const& _contract)
 {
+#ifdef ROCKY_REINSTATED
 	std::string argName;
 	std::string suffix;
 	std::string title;
@@ -393,10 +428,14 @@ void CommandLineInterface::handleNatspec(bool _natspecDev, string const& _contra
 		}
 
 	}
+#else
+	sout () << "Natspec not handled here: " << _natspecDev << _contract << endl;
+#endif
 }
 
 void CommandLineInterface::handleGasEstimation(string const& _contract)
 {
+#ifdef ROCKY_REINSTATED
 	Json::Value estimates = m_compiler->gasEstimates(_contract);
 	sout() << "Gas estimation:" << endl;
 
@@ -433,10 +472,14 @@ void CommandLineInterface::handleGasEstimation(string const& _contract)
 			sout() << internalFunctions[name].asString() << endl;
 		}
 	}
+#else
+	sout () << "Gas estimation not handled here: " << _contract << endl;
+#endif
 }
 
 bool CommandLineInterface::readInputFilesAndConfigureRemappings()
 {
+#ifdef ROCKY_REINSTATED
 	bool ignoreMissing = m_args.count(g_argIgnoreMissingFiles);
 	bool addStdin = false;
 	if (m_args.count(g_argInputFile))
@@ -500,6 +543,9 @@ bool CommandLineInterface::readInputFilesAndConfigureRemappings()
 		return false;
 	}
 
+#else
+	sout () << "readInputFiles and Configuration not handled here: " << endl;
+#endif
 	return true;
 }
 
@@ -560,7 +606,11 @@ bool CommandLineInterface::parseLibraryOption(string const& _input)
 				serr() << "Invalid address for library \"" << libName << "\": " << addrString << endl;
 				return false;
 			}
+#ifdef ROCKY_REINSTATED
 			m_libraries[libName] = address;
+#else
+			sout () << "parserLibraryOption not handled here for address: " << address << endl;
+#endif
 		}
 
 	return true;
@@ -830,6 +880,7 @@ bool CommandLineInterface::processInput()
 		}
 	}
 
+#ifdef ROCKY_HAS_GONE_OVER
 	if (m_args.count(g_argStandardJSON))
 	{
 		string input = dev::readStandardInput();
@@ -987,6 +1038,7 @@ bool CommandLineInterface::processInput()
 		serr() << "Unknown exception during compilation." << endl;
 		return false;
 	}
+#endif
 
 	return true;
 }
@@ -996,9 +1048,10 @@ void CommandLineInterface::handleCombinedJSON()
 	if (!m_args.count(g_argCombinedJson))
 		return;
 
+#ifdef ROCKY_REINSTATED
 	Json::Value output(Json::objectValue);
 
-	output[g_strVersion] = ::dev::solidity::VersionString;
+	output[g_strVersion] = "rocky fixme"; // ::dev::solidity::VersionString;
 	set<string> requests;
 	boost::split(requests, m_args[g_argCombinedJson].as<string>(), boost::is_any_of(","));
 	vector<string> contracts = m_compiler->contractNames();
@@ -1066,10 +1119,13 @@ void CommandLineInterface::handleCombinedJSON()
 		createJson("combined", json);
 	else
 		sout() << json << endl;
+#endif
 }
 
 void CommandLineInterface::handleAst(string const& _argStr)
 {
+#ifdef ROCKY_REINSTATED
+
 	string title;
 
 	if (_argStr == g_argAst)
@@ -1143,6 +1199,9 @@ void CommandLineInterface::handleAst(string const& _argStr)
 			}
 		}
 	}
+#else
+	sout () << "readInputFiles and Configuration not handled here: " << _argStr << endl;
+#endif
 }
 
 bool CommandLineInterface::actOnInput()
@@ -1160,6 +1219,7 @@ bool CommandLineInterface::actOnInput()
 bool CommandLineInterface::link()
 {
 	// Map from how the libraries will be named inside the bytecode to their addresses.
+#ifdef ROCKY_REINSTATED
 	map<string, h160> librariesReplacements;
 	int const placeholderSize = 40; // 20 bytes or 40 hex characters
 	for (auto const& library: m_libraries)
@@ -1207,6 +1267,9 @@ bool CommandLineInterface::link()
 		while (!src.second.empty() && *prev(src.second.end()) == '\n')
 			src.second.resize(src.second.size() - 1);
 	}
+#else
+		sout () << "link not handled here: " << endl;
+#endif
 	return true;
 }
 
@@ -1230,9 +1293,14 @@ void CommandLineInterface::writeLinkedFiles()
 
 string CommandLineInterface::libraryPlaceholderHint(string const& _libraryName)
 {
+#ifdef ROCKY_REINSTATED
 	return "// " + eth::LinkerObject::libraryPlaceholder(_libraryName) + " -> " + _libraryName;
+#else
+	return "// rocky has not done yet " + _libraryName;
+#endif
 }
 
+#ifdef ROCKY_REINSTATED
 string CommandLineInterface::objectWithLinkRefsHex(eth::LinkerObject const& _obj)
 {
 	string out = _obj.toHex();
@@ -1343,11 +1411,13 @@ bool CommandLineInterface::assemble(
 
 	return true;
 }
+#endif
 
 void CommandLineInterface::outputCompilationResults()
 {
 	handleCombinedJSON();
 
+#ifdef ROCKY_REINSTATED
 	// do we need AST output?
 	handleAst(g_argAst);
 	handleAst(g_argAstJson);
@@ -1389,6 +1459,12 @@ void CommandLineInterface::outputCompilationResults()
 		handleNatspec(true, contract);
 		handleNatspec(false, contract);
 	} // end of contracts iteration
+#else
+	if (needsHumanTargetedStdout(m_args))
+	{
+		;
+	}
+#endif
 
 	if (!g_hasOutput)
 	{

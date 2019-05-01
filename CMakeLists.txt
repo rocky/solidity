@@ -55,10 +55,10 @@ add_subdirectory(liblangutil)
 include_directories(${PROJECT_SOURCE_DIR})
 add_subdirectory(libsolidityp0)
 add_subdirectory(testp0)
-
-# add_subdirectory(solc)
+add_subdirectory(libsolc)
 
 if (NOT EMSCRIPTEN)
+	add_subdirectory(solc)
 	if (LLL)
 		add_subdirectory(liblll)
 		add_subdirectory(lllc)

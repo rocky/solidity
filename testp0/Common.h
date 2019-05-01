@@ -51,8 +51,10 @@ protected:
 
 	boost::program_options::options_description options;
 
+#ifdef ROCKY_REINSTATED
 private:
 	std::string evmVersionString;
+#endif
 };
 
 }
