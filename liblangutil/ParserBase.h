@@ -68,7 +68,7 @@ protected:
 
 	/// Like expectToken but if there is an error we will delete tokens until
 	/// we get the expected token or EOS.
-	void expectTokenOrConsumeUntil(Token _value, bool _advance = true);
+	void expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool _advance = true);
 	Token currentToken() const;
 	Token peekNextToken() const;
 	std::string tokenName(Token _token);

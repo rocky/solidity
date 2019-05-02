@@ -24,6 +24,20 @@
 #include <liblangutil/Scanner.h>
 #include <liblangutil/ErrorReporter.h>
 
+// Should this be moved somewhere more global
+namespace fmt {
+
+template< class ...Args >
+std::string sprintf( const char * f, Args && ...args ) {
+    int size = snprintf( nullptr, 0, f, args... );
+    std::string res;
+    res.resize( size );
+    snprintf( & res[ 0 ], size + 1, f, args... );
+    return res;
+}
+
+}
+
 using namespace std;
 using namespace langutil;
 
@@ -85,21 +99,26 @@ void ParserBase::expectToken(Token _value, bool _advance)
 		m_scanner->next();
 }
 
-void ParserBase::expectTokenOrConsumeUntil(Token _value, bool _advance)
+void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool _advance)
 {
 	Token tok = m_scanner->currentToken();
 	if (tok != _value)
 	{
 		Token token = m_scanner->currentToken();
-		SourceLocation errorLoc = SourceLocation{position(), endPosition(), source()};
+		int startPosition = position();
+		SourceLocation errorLoc = SourceLocation{startPosition, endPosition(), source()};
 		while (token != _value && token != Token::EOS)
 			token = m_scanner->next();
-		std::string tokenName = ParserBase::tokenName(_value);
-		std::string mess = string("Expected ") + tokenName + string(" but got ") + ParserBase::tokenName(tok) + string(". ");
+		std::string expectToken = ParserBase::tokenName(_value).c_str();
+		std::string mess = fmt::sprintf("In <%s> expected %s but got %s.", _lhs, expectToken.c_str(), ParserBase::tokenName(tok).c_str());
 		if (token == Token::EOS)
-			parserError(errorLoc, mess);
+		{
+			// rollback to where the token started, and raise exception to be caught at a higher level.
+			m_scanner->seek(startPosition);
+			fatalParserError(errorLoc, mess);
+		}
 		else
-			parserError(errorLoc, mess + "Skipped to next " + tokenName + ".");
+			parserError(errorLoc, mess + " Skipped to next " + expectToken + ".");
 	}
 	if (_advance)
 		m_scanner->next();
@@ -131,4 +150,9 @@ void ParserBase::parserError(string const& _description, bool _throw_error)
 void ParserBase::fatalParserError(string const& _description)
 {
 	m_errorReporter.fatalParserError(SourceLocation{position(), endPosition(), source()}, _description);
+}
+
+void ParserBase::fatalParserError(SourceLocation const& _location, string const& _description)
+{
+	m_errorReporter.fatalParserError(_location, _description);
 }
