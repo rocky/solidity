@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <libsolidity/interface/CompilerStack.h>
+#include <libsolidityp0/interface/CompilerStack.h>
 
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
@@ -64,9 +64,11 @@ private:
 		std::map<h256, std::string> smtLib2Responses;
 		langutil::EVMVersion evmVersion;
 		std::vector<CompilerStack::Remapping> remappings;
+#ifdef ROCKY_REINSTATED
 		OptimiserSettings optimiserSettings = OptimiserSettings::minimal();
 		std::map<std::string, h160> libraries;
 		bool metadataLiteralSources = false;
+#endif
 		Json::Value outputSelection;
 	};
 

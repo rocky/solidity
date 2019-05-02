@@ -21,10 +21,10 @@
  */
 #pragma once
 
-#ifdef ROCKY_REINSTATED
-#include <libsolidity/interface/CompilerStack.h>
-#include <libyul/AssemblyStack.h>
+#include <libsolidityp0/interface/CompilerStack.h>
 #include <liblangutil/EVMVersion.h>
+#ifdef ROCKY_REINSTATED
+#include <libyul/AssemblyStack.h>
 #endif
 
 #include <boost/program_options.hpp>
@@ -104,10 +104,8 @@ private:
 	boost::program_options::variables_map m_args;
 	/// map of input files to source code strings
 	std::map<std::string, std::string> m_sourceCodes;
-#ifdef ROCKY_REINSTATED
 	/// list of remappings
 	std::vector<dev::solidity::CompilerStack::Remapping> m_remappings;
-#endif
 	/// list of allowed directories to read files from
 	std::vector<boost::filesystem::path> m_allowedDirectories;
 #ifdef ROCKY_REINSTATED

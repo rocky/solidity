@@ -26,19 +26,30 @@
 #include "solidity/BuildInfo.h"
 #include "license.h"
 
-#include <libsolidity/interface/Version.h>
-#include <libsolidity/parsing/Parser.h>
-#include <libsolidity/ast/ASTPrinter.h>
-#include <libsolidity/ast/ASTJsonConverter.h>
-#include <libsolidity/analysis/NameAndTypeResolver.h>
-#include <libsolidity/interface/CompilerStack.h>
-#include <libsolidity/interface/StandardCompiler.h>
-#include <libsolidity/interface/GasEstimator.h>
+#include <libsolidityp0/interface/Version.h>
+#include <libsolidityp0/parsing/Parser.h>
 
-#include <libyul/AssemblyStack.h>
+#ifdef ROCKY_REINSTATED
+# include <libsolidityp0/ast/ASTPrinter.h>
+#endif
 
-#include <libevmasm/Instruction.h>
-#include <libevmasm/GasMeter.h>
+#include <libsolidityp0/ast/ASTJsonConverter.h>
+
+#ifdef ROCKY_REINSTATED
+# include <libsolidity/analysis/NameAndTypeResolver.h>
+#endif
+
+#include <libsolidityp0/interface/CompilerStack.h>
+#include <libsolidityp0/interface/StandardCompiler.h>
+
+#ifdef ROCKY_REINSTATED
+# include <libsolidity/interface/GasEstimator.h>
+
+# include <libyul/AssemblyStack.h>
+
+# include <libevmasm/Instruction.h>
+# include <libevmasm/GasMeter.h>
+#endif
 
 #include <liblangutil/Exceptions.h>
 #include <liblangutil/Scanner.h>
@@ -479,7 +490,6 @@ void CommandLineInterface::handleGasEstimation(string const& _contract)
 
 bool CommandLineInterface::readInputFilesAndConfigureRemappings()
 {
-#ifdef ROCKY_REINSTATED
 	bool ignoreMissing = m_args.count(g_argIgnoreMissingFiles);
 	bool addStdin = false;
 	if (m_args.count(g_argInputFile))
@@ -543,9 +553,6 @@ bool CommandLineInterface::readInputFilesAndConfigureRemappings()
 		return false;
 	}
 
-#else
-	sout () << "readInputFiles and Configuration not handled here: " << endl;
-#endif
 	return true;
 }
 
@@ -888,10 +895,12 @@ bool CommandLineInterface::processInput()
 		sout() << compiler.compile(std::move(input)) << endl;
 		return true;
 	}
+#endif
 
 	if (!readInputFilesAndConfigureRemappings())
 		return false;
 
+#ifdef ROCKY_HAS_GONE_OVER
 	if (m_args.count(g_argLibraries))
 		for (string const& library: m_args[g_argLibraries].as<vector<string>>())
 			if (!parseLibraryOption(library))

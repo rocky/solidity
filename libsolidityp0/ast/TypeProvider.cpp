@@ -15,8 +15,8 @@
 	along with solidity.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <libsolidity/ast/AST.h>
-#include <libsolidity/ast/TypeProvider.h>
+#include <libsolidityp0/ast/AST.h>
+#include <libsolidityp0/ast/TypeProvider.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/split.hpp>
 

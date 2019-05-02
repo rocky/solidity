@@ -20,7 +20,7 @@
  * Versioning.
  */
 
-#include <libsolidityp0/parsing/Version.h>
+#include <libsolidityp0/interface/Version.h>
 
 #include <liblangutil/Exceptions.h>
 #include <libdevcore/CommonData.h>

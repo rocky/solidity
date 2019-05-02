@@ -22,33 +22,40 @@
  */
 
 
-#include <libsolidity/interface/CompilerStack.h>
+#include <libsolidityp0/interface/CompilerStack.h>
+#include <liblangutil/SemVerHandler.h>
 
-#include <libsolidity/analysis/ControlFlowAnalyzer.h>
-#include <libsolidity/analysis/ControlFlowGraph.h>
-#include <libsolidity/analysis/ContractLevelChecker.h>
-#include <libsolidity/analysis/DocStringAnalyser.h>
-#include <libsolidity/analysis/GlobalContext.h>
-#include <libsolidity/analysis/NameAndTypeResolver.h>
-#include <libsolidity/analysis/PostTypeChecker.h>
-#include <libsolidity/analysis/StaticAnalyzer.h>
-#include <libsolidity/analysis/SyntaxChecker.h>
-#include <libsolidity/analysis/TypeChecker.h>
-#include <libsolidity/analysis/ViewPureChecker.h>
+#ifdef ROCKY_REINSTATED
+#include <libsolidityparse/analysis/ControlFlowAnalyzer.h>
+#include <libsolidityparse/analysis/ControlFlowGraph.h>
+#include <libsolidityparse/analysis/ContractLevelChecker.h>
+#include <libsolidityparse/analysis/DocStringAnalyser.h>
+#include <libsolidityparse/analysis/GlobalContext.h>
+#include <libsolidityparse/analysis/NameAndTypeResolver.h>
+#include <libsolidityparse/analysis/PostTypeChecker.h>
+#include <libsolidityparse/analysis/StaticAnalyzer.h>
+#include <libsolidityparse/analysis/SyntaxChecker.h>
+#include <libsolidityparse/analysis/TypeChecker.h>
+#include <libsolidityparse/analysis/ViewPureChecker.h>
+#endif
 
-#include <libsolidity/ast/AST.h>
-#include <libsolidity/ast/TypeProvider.h>
-#include <libsolidity/codegen/Compiler.h>
-#include <libsolidity/formal/SMTChecker.h>
-#include <libsolidity/interface/ABI.h>
-#include <libsolidity/interface/Natspec.h>
-#include <libsolidity/interface/GasEstimator.h>
-#include <libsolidity/interface/Version.h>
-#include <libsolidity/parsing/Parser.h>
+#include <libsolidityp0/ast/AST.h>
+#include <libsolidityp0/ast/TypeProvider.h>
+#include <libsolidityp0/interface/Version.h>
+#include <libsolidityp0/parsing/Parser.h>
 
-#include <libsolidity/codegen/ir/IRGenerator.h>
+#ifdef ROCKY_REINSTATED
+# include <libsolidityparse/codegen/Compiler.h>
+# include <libsolidityparse/formal/SMTChecker.h>
+# include <libsolidityparse/interface/ABI.h>
+# include <libsolidityparse/interface/Natspec.h>
+# include <libsolidityparse/interface/GasEstimator.h>
+#endif
 
-#include <libyul/YulString.h>
+#ifdef ROCKY_REINSTATED
+
+# include <libyul/YulString.h>
+#endif
 
 #include <liblangutil/Scanner.h>
 #include <liblangutil/SemVerHandler.h>
@@ -132,11 +139,18 @@ void CompilerStack::setLibraries(std::map<std::string, h160> const& _libraries)
 
 void CompilerStack::setOptimiserSettings(bool _optimize, unsigned _runs)
 {
+#ifdef ROCKY_REINSTATED
+
 	OptimiserSettings settings = _optimize ? OptimiserSettings::standard() : OptimiserSettings::minimal();
 	settings.expectedExecutionsPerDeployment = _runs;
 	setOptimiserSettings(std::move(settings));
+#else
+	if (_optimize || _runs)
+		cout << "setOPtimiserSettings not done yet " << endl;
+#endif
 }
 
+#ifdef ROCKY_REINSTATED
 void CompilerStack::setOptimiserSettings(OptimiserSettings _settings)
 {
 	if (m_stackState >= ParsingSuccessful)
@@ -157,6 +171,7 @@ void CompilerStack::addSMTLib2Response(h256 const& _hash, string const& _respons
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Must add SMTLib2 responses before parsing."));
 	m_smtlib2Responses[_hash] = _response;
 }
+#endif
 
 void CompilerStack::reset(bool _keepSettings)
 {
@@ -169,8 +184,7 @@ void CompilerStack::reset(bool _keepSettings)
 		m_remappings.clear();
 		m_libraries.clear();
 		m_evmVersion = langutil::EVMVersion();
-		m_generateIR = false;
-		m_optimiserSettings = OptimiserSettings::minimal();
+		// m_optimiserSettings = OptimiserSettings::minimal();
 		m_metadataLiteralSources = false;
 	}
 	m_globalContext.reset();
@@ -202,11 +216,13 @@ bool CompilerStack::parse()
 	if (SemVerVersion{string(VersionString)}.isPrerelease())
 		m_errorReporter.warning("This is a pre-release compiler version, please do not use it in production.");
 
+#ifdef ROCKY_REINSTATED
 	if (m_optimiserSettings.runYulOptimiser)
 		m_errorReporter.warning(
 			"The Yul optimiser is still experimental. "
 			"Do not use it in production unless correctness of generated code is verified with extensive tests."
 		);
+#endif
 
 	vector<string> sourcesToParse;
 	for (auto const& s: m_sources)
@@ -240,6 +256,7 @@ bool CompilerStack::parse()
 		return false;
 }
 
+#ifdef ROCKY_REINSTATED
 bool CompilerStack::analyze()
 {
 	if (m_stackState != ParsingSuccessful || m_stackState >= AnalysisSuccessful)
@@ -387,9 +404,15 @@ bool CompilerStack::analyze()
 		return false;
 }
 
+#endif
+
 bool CompilerStack::parseAndAnalyze()
 {
+#ifdef ROCKY_REINSTATED
 	return parse() && analyze();
+#else
+	return parse();
+#endif
 }
 
 bool CompilerStack::isRequestedContract(ContractDefinition const& _contract) const
@@ -406,22 +429,21 @@ bool CompilerStack::compile()
 		if (!parseAndAnalyze())
 			return false;
 
+#ifdef ROCKY_REINSTATED
 	// Only compile contracts individually which have been requested.
 	map<ContractDefinition const*, shared_ptr<Compiler const>> otherCompilers;
 	for (Source const* source: m_sourceOrder)
 		for (ASTPointer<ASTNode> const& node: source->ast->nodes())
 			if (auto contract = dynamic_cast<ContractDefinition const*>(node.get()))
 				if (isRequestedContract(*contract))
-				{
 					compileContract(*contract, otherCompilers);
-					if (m_generateIR)
-						generateIR(*contract);
-				}
 	m_stackState = CompilationSuccessful;
 	this->link();
+#endif
 	return true;
 }
 
+#ifdef ROCKY_REINSTATED
 void CompilerStack::link()
 {
 	solAssert(m_stackState >= CompilationSuccessful, "");
@@ -431,6 +453,7 @@ void CompilerStack::link()
 		contract.second.runtimeObject.link(m_libraries);
 	}
 }
+#endif
 
 vector<string> CompilerStack::contractNames() const
 {
@@ -455,6 +478,7 @@ string const CompilerStack::lastContractName() const
 	return contractName;
 }
 
+#ifdef ROCKY_REINSTATED
 eth::AssemblyItems const* CompilerStack::assemblyItems(string const& _contractName) const
 {
 	if (m_stackState != CompilationSuccessful)
@@ -500,6 +524,7 @@ string const* CompilerStack::runtimeSourceMapping(string const& _contractName) c
 	}
 	return c.runtimeSourceMapping.get();
 }
+#endif
 
 std::string const CompilerStack::filesystemFriendlyName(string const& _contractName) const
 {
@@ -525,22 +550,7 @@ std::string const CompilerStack::filesystemFriendlyName(string const& _contractN
 	return matchContract.contract->name();
 }
 
-string const& CompilerStack::yulIR(string const& _contractName) const
-{
-	if (m_stackState != CompilationSuccessful)
-		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Compilation was not successful."));
-
-	return contract(_contractName).yulIR;
-}
-
-string const& CompilerStack::yulIROptimized(string const& _contractName) const
-{
-	if (m_stackState != CompilationSuccessful)
-		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Compilation was not successful."));
-
-	return contract(_contractName).yulIROptimized;
-}
-
+#ifdef ROCKY_REINSTATED
 eth::LinkerObject const& CompilerStack::object(string const& _contractName) const
 {
 	if (m_stackState != CompilationSuccessful)
@@ -582,6 +592,7 @@ Json::Value CompilerStack::assemblyJSON(string const& _contractName, StringMap c
 	else
 		return Json::Value();
 }
+#endif
 
 vector<string> CompilerStack::sourceNames() const
 {
@@ -600,6 +611,7 @@ map<string, unsigned> CompilerStack::sourceIndices() const
 	return indices;
 }
 
+#ifdef ROCKY_REINSTATED
 Json::Value const& CompilerStack::contractABI(string const& _contractName) const
 {
 	if (m_stackState < AnalysisSuccessful)
@@ -698,6 +710,7 @@ string const& CompilerStack::metadata(Contract const& _contract) const
 
 	return *_contract.metadata;
 }
+#endif
 
 Scanner const& CompilerStack::scanner(string const& _sourceName) const
 {
@@ -723,6 +736,7 @@ ContractDefinition const& CompilerStack::contractDefinition(string const& _contr
 	return *contract(_contractName).contract;
 }
 
+#ifdef ROCKY_REINSTATED
 size_t CompilerStack::functionEntryPoint(
 	std::string const& _contractName,
 	FunctionDefinition const& _function
@@ -743,6 +757,7 @@ size_t CompilerStack::functionEntryPoint(
 			return i;
 	return 0;
 }
+#endif
 
 tuple<int, int, int, int> CompilerStack::positionFromSourceLocation(SourceLocation const& _sourceLocation) const
 {
@@ -757,6 +772,7 @@ tuple<int, int, int, int> CompilerStack::positionFromSourceLocation(SourceLocati
 }
 
 
+#ifdef ROCKY_REINSTATED
 h256 const& CompilerStack::Source::keccak256() const
 {
 	if (keccak256HashCached == h256{})
@@ -770,7 +786,7 @@ h256 const& CompilerStack::Source::swarmHash() const
 		swarmHashCached = dev::swarmHash(scanner->source());
 	return swarmHashCached;
 }
-
+#endif
 
 StringMap CompilerStack::loadMissingSources(SourceUnit const& _ast, std::string const& _sourcePath)
 {
@@ -881,6 +897,7 @@ void CompilerStack::resolveImports()
 	swap(m_sourceOrder, sourceOrder);
 }
 
+#ifdef ROCKY_REINSTATED
 namespace
 {
 bool onlySafeExperimentalFeaturesActivated(set<ExperimentalFeature> const& features)
@@ -946,24 +963,7 @@ void CompilerStack::compileContract(
 
 	_otherCompilers[compiledContract.contract] = compiler;
 }
-
-void CompilerStack::generateIR(ContractDefinition const& _contract)
-{
-	solAssert(m_stackState >= AnalysisSuccessful, "");
-
-	if (!_contract.canBeDeployed())
-		return;
-
-	Contract& compiledContract = m_contracts.at(_contract.fullyQualifiedName());
-	if (!compiledContract.yulIR.empty())
-		return;
-
-	for (auto const* dependency: _contract.annotation().contractDependencies)
-		generateIR(*dependency);
-
-	IRGenerator generator(m_evmVersion, m_optimiserSettings);
-	tie(compiledContract.yulIR, compiledContract.yulIROptimized) = generator.run(_contract);
-}
+#endif
 
 CompilerStack::Contract const& CompilerStack::contract(string const& _contractName) const
 {
@@ -1005,6 +1005,7 @@ CompilerStack::Source const& CompilerStack::source(string const& _sourceName) co
 	return it->second;
 }
 
+#ifdef ROCKY_REINSTATED
 string CompilerStack::createMetadata(Contract const& _contract) const
 {
 	Json::Value meta;
@@ -1067,8 +1068,6 @@ string CompilerStack::createMetadata(Contract const& _contract) const
 		meta["settings"]["optimizer"]["details"] = std::move(details);
 	}
 
-	if (m_metadataLiteralSources)
-		meta["settings"]["metadata"]["useLiteralContent"] = true;
 	meta["settings"]["evmVersion"] = m_evmVersion.name();
 	meta["settings"]["compilationTarget"][_contract.contract->sourceUnitName()] =
 		_contract.contract->annotation().canonicalName;
@@ -1258,7 +1257,9 @@ string CompilerStack::computeSourceMapping(eth::AssemblyItems const& _items) con
 	}
 	return ret;
 }
+#endif
 
+#ifdef ROCKY_REINSTATED
 namespace
 {
 
@@ -1348,3 +1349,5 @@ Json::Value CompilerStack::gasEstimates(string const& _contractName) const
 
 	return output;
 }
+
+#endif

@@ -22,7 +22,7 @@
 
 #include <libsolidityp0/parsing/Parser.h>
 
-#include <libsolidityp0/parsing/Version.h>
+#include <libsolidityp0/interface/Version.h>
 #include <liblangutil/ErrorReporter.h>
 #include <liblangutil/Scanner.h>
 #include <liblangutil/SemVerHandler.h>

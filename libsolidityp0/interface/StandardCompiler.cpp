@@ -20,12 +20,19 @@
  * Standard JSON compiler interface.
  */
 
-#include <libsolidity/interface/StandardCompiler.h>
+#include <libsolidityp0/interface/StandardCompiler.h>
 
-#include <libsolidity/ast/ASTJsonConverter.h>
+#ifdef ROCKY_REINSTATED
+#include <libsolidityp0/ast/ASTJsonConverter.h>
 #include <libyul/AssemblyStack.h>
+#endif
+
 #include <liblangutil/SourceReferenceFormatter.h>
+
+#ifdef ROCKY_REINSTATED
 #include <libevmasm/Instruction.h>
+#endif
+
 #include <libdevcore/JSON.h>
 #include <libdevcore/Keccak256.h>
 
@@ -38,7 +45,7 @@ using namespace std;
 using namespace dev;
 using namespace langutil;
 using namespace dev::solidity;
-using namespace yul;
+// using namespace yul;
 
 namespace {
 
@@ -129,18 +136,12 @@ bool hashMatchesContent(string const& _hash, string const& _content)
 	}
 }
 
-bool isArtifactRequested(Json::Value const& _outputSelection, string const& _artifact, bool _wildcardMatchesIR)
+bool isArtifactRequested(Json::Value const& _outputSelection, string const& _artifact)
 {
 	for (auto const& artifact: _outputSelection)
 		/// @TODO support sub-matching, e.g "evm" matches "evm.assembly"
-		if (artifact == _artifact)
+		if (artifact == "*" || artifact == _artifact)
 			return true;
-		else if (artifact == "*")
-		{
-			// "ir" and "irOptimized" can only be matched by "*" if activated.
-			if ((_artifact != "ir" && _artifact != "irOptimized") || _wildcardMatchesIR)
-				return true;
-		}
 	return false;
 }
 
@@ -157,7 +158,7 @@ bool isArtifactRequested(Json::Value const& _outputSelection, string const& _art
 ///
 /// @TODO optimise this. Perhaps flatten the structure upfront.
 ///
-bool isArtifactRequested(Json::Value const& _outputSelection, string const& _file, string const& _contract, string const& _artifact, bool _wildcardMatchesIR)
+bool isArtifactRequested(Json::Value const& _outputSelection, string const& _file, string const& _contract, string const& _artifact)
 {
 	if (!_outputSelection.isObject())
 		return false;
@@ -174,7 +175,7 @@ bool isArtifactRequested(Json::Value const& _outputSelection, string const& _fil
 				if (
 					_outputSelection[file].isMember(contract) &&
 					_outputSelection[file][contract].isArray() &&
-					isArtifactRequested(_outputSelection[file][contract], _artifact, _wildcardMatchesIR)
+					isArtifactRequested(_outputSelection[file][contract], _artifact)
 				)
 					return true;
 		}
@@ -182,10 +183,10 @@ bool isArtifactRequested(Json::Value const& _outputSelection, string const& _fil
 	return false;
 }
 
-bool isArtifactRequested(Json::Value const& _outputSelection, string const& _file, string const& _contract, vector<string> const& _artifacts, bool _wildcardMatchesIR)
+bool isArtifactRequested(Json::Value const& _outputSelection, string const& _file, string const& _contract, vector<string> const& _artifacts)
 {
 	for (auto const& artifact: _artifacts)
-		if (isArtifactRequested(_outputSelection, _file, _contract, artifact, _wildcardMatchesIR))
+		if (isArtifactRequested(_outputSelection, _file, _contract, artifact))
 			return true;
 	return false;
 }
@@ -199,7 +200,6 @@ bool isBinaryRequested(Json::Value const& _outputSelection)
 	// This does not inculde "evm.methodIdentifiers" on purpose!
 	static vector<string> const outputsThatRequireBinaries{
 		"*",
-		"ir", "irOptimized",
 		"evm.deployedBytecode", "evm.deployedBytecode.object", "evm.deployedBytecode.opcodes",
 		"evm.deployedBytecode.sourceMap", "evm.deployedBytecode.linkReferences",
 		"evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap",
@@ -210,27 +210,10 @@ bool isBinaryRequested(Json::Value const& _outputSelection)
 	for (auto const& fileRequests: _outputSelection)
 		for (auto const& requests: fileRequests)
 			for (auto const& output: outputsThatRequireBinaries)
-				if (isArtifactRequested(requests, output, false))
+				if (isArtifactRequested(requests, output))
 					return true;
 	return false;
 }
-
-/// @returns true if any Yul IR was requested. Note that as an exception, '*' does not
-/// yet match "ir" or "irOptimized"
-bool isIRRequested(Json::Value const& _outputSelection)
-{
-	if (!_outputSelection.isObject())
-		return false;
-
-	for (auto const& fileRequests: _outputSelection)
-		for (auto const& requests: fileRequests)
-			for (auto const& request: requests)
-				if (request == "ir" || request == "irOptimized")
-					return true;
-
-	return false;
-}
-
 
 Json::Value formatLinkReferences(std::map<size_t, std::string> const& linkReferences)
 {
@@ -681,10 +664,6 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 	compilerStack.useMetadataLiteralSources(_inputsAndSettings.metadataLiteralSources);
 	compilerStack.setRequestedContractNames(requestedContractNames(_inputsAndSettings.outputSelection));
 
-	bool const irRequested = isIRRequested(_inputsAndSettings.outputSelection);
-
-	compilerStack.enableIRGeneration(irRequested);
-
 	Json::Value errors = std::move(_inputsAndSettings.errors);
 
 	bool const binariesRequested = isBinaryRequested(_inputsAndSettings.outputSelection);
@@ -795,17 +774,15 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 		for (string const& query: compilerStack.unhandledSMTLib2Queries())
 			output["auxiliaryInputRequested"]["smtlib2queries"]["0x" + keccak256(query).hex()] = query;
 
-	bool const wildcardMatchesIR = false;
-
 	output["sources"] = Json::objectValue;
 	unsigned sourceIndex = 0;
 	for (string const& sourceName: analysisSuccess ? compilerStack.sourceNames() : vector<string>())
 	{
 		Json::Value sourceResult = Json::objectValue;
 		sourceResult["id"] = sourceIndex++;
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, "", "ast", wildcardMatchesIR))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, "", "ast"))
 			sourceResult["ast"] = ASTJsonConverter(false, compilerStack.sourceIndices()).toJson(compilerStack.ast(sourceName));
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, "", "legacyAST", wildcardMatchesIR))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, "", "legacyAST"))
 			sourceResult["legacyAST"] = ASTJsonConverter(true, compilerStack.sourceIndices()).toJson(compilerStack.ast(sourceName));
 		output["sources"][sourceName] = sourceResult;
 	}
@@ -820,38 +797,32 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 
 		// ABI, documentation and metadata
 		Json::Value contractData(Json::objectValue);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "abi", wildcardMatchesIR))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "abi"))
 			contractData["abi"] = compilerStack.contractABI(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "metadata", wildcardMatchesIR))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "metadata"))
 			contractData["metadata"] = compilerStack.metadata(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "userdoc", wildcardMatchesIR))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "userdoc"))
 			contractData["userdoc"] = compilerStack.natspecUser(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "devdoc", wildcardMatchesIR))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "devdoc"))
 			contractData["devdoc"] = compilerStack.natspecDev(contractName);
-
-		// IR
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "ir", wildcardMatchesIR))
-			contractData["ir"] = compilerStack.yulIR(contractName);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "irOptimized", wildcardMatchesIR))
-			contractData["irOptimized"] = compilerStack.yulIROptimized(contractName);
 
 		// EVM
 		Json::Value evmData(Json::objectValue);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.assembly", wildcardMatchesIR))
+		// @TODO: add ir
+		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.assembly"))
 			evmData["assembly"] = compilerStack.assemblyString(contractName, sourceList);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.legacyAssembly", wildcardMatchesIR))
+		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.legacyAssembly"))
 			evmData["legacyAssembly"] = compilerStack.assemblyJSON(contractName, sourceList);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.methodIdentifiers", wildcardMatchesIR))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.methodIdentifiers"))
 			evmData["methodIdentifiers"] = compilerStack.methodIdentifiers(contractName);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.gasEstimates", wildcardMatchesIR))
+		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.gasEstimates"))
 			evmData["gasEstimates"] = compilerStack.gasEstimates(contractName);
 
 		if (compilationSuccess && isArtifactRequested(
 			_inputsAndSettings.outputSelection,
 			file,
 			name,
-			{ "evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap", "evm.bytecode.linkReferences" },
-			wildcardMatchesIR
+			{ "evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap", "evm.bytecode.linkReferences" }
 		))
 			evmData["bytecode"] = collectEVMObject(
 				compilerStack.object(contractName),
@@ -862,8 +833,7 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 			_inputsAndSettings.outputSelection,
 			file,
 			name,
-			{ "evm.deployedBytecode", "evm.deployedBytecode.object", "evm.deployedBytecode.opcodes", "evm.deployedBytecode.sourceMap", "evm.deployedBytecode.linkReferences" },
-			wildcardMatchesIR
+			{ "evm.deployedBytecode", "evm.deployedBytecode.object", "evm.deployedBytecode.opcodes", "evm.deployedBytecode.sourceMap", "evm.deployedBytecode.linkReferences" }
 		))
 			evmData["deployedBytecode"] = collectEVMObject(
 				compilerStack.runtimeObject(contractName),
@@ -937,8 +907,7 @@ Json::Value StandardCompiler::compileYul(InputsAndSettings _inputsAndSettings)
 
 	string contractName = stack.parserResult()->name.str();
 
-	bool const wildcardMatchesIR = true;
-	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "ir", wildcardMatchesIR))
+	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "ir"))
 		output["contracts"][sourceName][contractName]["ir"] = stack.print();
 
 	stack.optimize();
@@ -949,14 +918,13 @@ Json::Value StandardCompiler::compileYul(InputsAndSettings _inputsAndSettings)
 		_inputsAndSettings.outputSelection,
 		sourceName,
 		contractName,
-		{ "evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap", "evm.bytecode.linkReferences" },
-		wildcardMatchesIR
+		{ "evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap", "evm.bytecode.linkReferences" }
 	))
 		output["contracts"][sourceName][contractName]["evm"]["bytecode"] = collectEVMObject(*object.bytecode, nullptr);
 
-	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "irOptimized", wildcardMatchesIR))
+	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "irOptimized"))
 		output["contracts"][sourceName][contractName]["irOptimized"] = stack.print();
-	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "evm.assembly", wildcardMatchesIR))
+	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "evm.assembly"))
 		output["contracts"][sourceName][contractName]["evm"]["assembly"] = object.assembly;
 
 	return output;

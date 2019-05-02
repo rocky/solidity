@@ -23,8 +23,10 @@
 
 #pragma once
 
-#include <libsolidity/interface/ReadFile.h>
-#include <libsolidity/interface/OptimiserSettings.h>
+#include <libsolidityp0/interface/ReadFile.h>
+#ifdef ROCKY_REINSTATED
+#include <libsolidityp0/interface/OptimiserSettings.h>
+#endif
 
 #include <liblangutil/ErrorReporter.h>
 #include <liblangutil/EVMVersion.h>
@@ -129,7 +131,9 @@ public:
 
 	/// Changes the optimiser settings.
 	/// Must be set before parsing.
+#ifdef ROCKY_REINSTATED
 	void setOptimiserSettings(OptimiserSettings _settings);
+#endif
 
 	/// Set the EVM version used before running compile.
 	/// When called without an argument it will revert to the default version.
@@ -142,8 +146,10 @@ public:
 		m_requestedContractNames = _contractNames;
 	}
 
+#ifdef ROCKY_REINSTATED
 	/// Enable experimental generation of Yul IR code.
 	void enableIRGeneration(bool _enable = true) { m_generateIR = _enable; }
+#endif
 
 	/// @arg _metadataLiteralSources When true, store sources as literals in the contract metadata.
 	/// Must be set before parsing.
@@ -152,14 +158,17 @@ public:
 	/// Sets the sources. Must be set before parsing.
 	void setSources(StringMap _sources);
 
+#ifdef ROCKY_REINSTATED
 	/// Adds a response to an SMTLib2 query (identified by the hash of the query input).
 	/// Must be set before parsing.
 	void addSMTLib2Response(h256 const& _hash, std::string const& _response);
+#endif
 
 	/// Parses all source units that were added
 	/// @returns false on error.
 	bool parse();
 
+#ifdef ROCKY_REINSTATED
 	/// Performs the analysis steps (imports, scopesetting, syntaxCheck, referenceResolving,
 	///  typechecking, staticAnalysis) on previously parsed sources.
 	/// @returns false on error.
@@ -167,6 +176,8 @@ public:
 
 	/// Parses and analyzes all source units that were added
 	/// @returns false on error.
+#endif
+
 	bool parseAndAnalyze();
 
 	/// Compiles the source units that were previously added and parsed.
@@ -191,9 +202,11 @@ public:
 	/// start line, start column, end line, end column
 	std::tuple<int, int, int, int> positionFromSourceLocation(langutil::SourceLocation const& _sourceLocation) const;
 
+#ifdef ROCKY_REINSTATED
 	/// @returns a list of unhandled queries to the SMT solver (has to be supplied in a second run
 	/// by calling @a addSMTLib2Response).
 	std::vector<std::string> const& unhandledSMTLib2Queries() const { return m_unhandledSMTLib2Queries; }
+#endif
 
 	/// @returns a list of the contract names in the sources.
 	std::vector<std::string> contractNames() const;
@@ -204,6 +217,7 @@ public:
 	/// @returns either the contract's name or a mixture of its name and source file, sanitized for filesystem use
 	std::string const filesystemFriendlyName(std::string const& _contractName) const;
 
+#ifdef ROCKY_REINSTATED
 	/// @returns the IR representation of a contract.
 	std::string const& yulIR(std::string const& _contractName) const;
 
@@ -260,6 +274,7 @@ public:
 
 	/// @returns a JSON representing the estimated gas usage for contract creation, internal and external functions
 	Json::Value gasEstimates(std::string const& _contractName) const;
+#endif
 
 private:
 	/// The state per source unit. Filled gradually during parsing.
@@ -267,11 +282,15 @@ private:
 	{
 		std::shared_ptr<langutil::Scanner> scanner;
 		std::shared_ptr<SourceUnit> ast;
+#ifdef ROCKY_REINSTATED
 		h256 mutable keccak256HashCached;
 		h256 mutable swarmHashCached;
+#endif
 		void reset() { *this = Source(); }
+#ifdef ROCKY_REINSTATED
 		h256 const& keccak256() const;
 		h256 const& swarmHash() const;
+#endif
 	};
 
 	/// The state per contract. Filled gradually during compilation.
@@ -279,6 +298,7 @@ private:
 	{
 		ContractDefinition const* contract = nullptr;
 		std::shared_ptr<Compiler> compiler;
+#ifdef ROCKY_REINSTATED
 		eth::LinkerObject object; ///< Deployment object (includes the runtime sub-object).
 		eth::LinkerObject runtimeObject; ///< Runtime object.
 		std::string yulIR; ///< Experimental Yul IR code.
@@ -289,6 +309,7 @@ private:
 		mutable std::unique_ptr<Json::Value const> devDocumentation;
 		mutable std::unique_ptr<std::string const> sourceMapping;
 		mutable std::unique_ptr<std::string const> runtimeSourceMapping;
+#endif
 	};
 
 	/// Loads the missing sources from @a _ast (named @a _path) using the callback
@@ -309,6 +330,7 @@ private:
 		std::map<ContractDefinition const*, std::shared_ptr<Compiler const>>& _otherCompilers
 	);
 
+#ifdef ROCKY_REINSTATED
 	/// Generate Yul IR for a single contract.
 	/// The IR is stored but otherwise unused.
 	void generateIR(ContractDefinition const& _contract);
@@ -316,6 +338,7 @@ private:
 	/// Links all the known library addresses in the available objects. Any unknown
 	/// library will still be kept as an unlinked placeholder in the objects.
 	void link();
+#endif
 
 	/// @returns the contract object for the given @a _contractName.
 	/// Can only be called after state is CompilationSuccessful.
@@ -329,6 +352,7 @@ private:
 	/// does not exist.
 	ContractDefinition const& contractDefinition(std::string const& _contractName) const;
 
+#ifdef ROCKY_REINSTATED
 	/// @returns the metadata JSON as a compact string for the given contract.
 	std::string createMetadata(Contract const& _contract) const;
 
@@ -360,9 +384,12 @@ private:
 		std::string const& _contractName,
 		FunctionDefinition const& _function
 	) const;
+#endif
 
 	ReadCallback::Callback m_readFile;
+#ifdef ROCKY_REINSTATED
 	OptimiserSettings m_optimiserSettings;
+#endif
 	langutil::EVMVersion m_evmVersion;
 	std::set<std::string> m_requestedContractNames;
 	bool m_generateIR;

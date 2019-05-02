@@ -23,8 +23,8 @@
 #include <libsolc/libsolc.h>
 #include <libdevcore/Common.h>
 #include <libdevcore/JSON.h>
-#include <libsolidity/interface/StandardCompiler.h>
-#include <libsolidity/interface/Version.h>
+#include <libsolidityp0/interface/StandardCompiler.h>
+#include <libsolidityp0/interface/Version.h>
 
 #include <string>
 
