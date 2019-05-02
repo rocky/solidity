@@ -60,7 +60,9 @@
 #include <liblangutil/Scanner.h>
 #include <liblangutil/SemVerHandler.h>
 
+#ifdef ROCKY_REINSTATED
 #include <libevmasm/Exceptions.h>
+#endif
 
 #include <libdevcore/SwarmHash.h>
 #include <libdevcore/JSON.h>

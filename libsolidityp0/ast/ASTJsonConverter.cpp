@@ -22,8 +22,12 @@
 #include <libsolidityp0/ast/ASTJsonConverter.h>
 
 #include <libsolidityp0/ast/AST.h>
+
+#ifdef ROCKY_REINSTATED
 #include <libyul/AsmData.h>
 #include <libyul/AsmPrinter.h>
+#endif
+
 #include <libdevcore/UTF8.h>
 #include <boost/algorithm/string/join.hpp>
 
@@ -173,6 +177,7 @@ void ASTJsonConverter::appendExpressionAttributes(
 	_attributes += exprAttributes;
 }
 
+#ifdef ROCKY_REINSTATED
 Json::Value ASTJsonConverter::inlineAssemblyIdentifierToJson(pair<yul::Identifier const* ,InlineAssemblyAnnotation::ExternalIdentifierInfo> _info) const
 {
 	Json::Value tuple(Json::objectValue);
@@ -183,6 +188,7 @@ Json::Value ASTJsonConverter::inlineAssemblyIdentifierToJson(pair<yul::Identifie
 	tuple["valueSize"] = Json::Value(Json::LargestUInt(_info.second.valueSize));
 	return tuple;
 }
+#endif
 
 void ASTJsonConverter::print(ostream& _stream, ASTNode const& _node)
 {
@@ -453,6 +459,7 @@ bool ASTJsonConverter::visit(ArrayTypeName const& _node)
 	return false;
 }
 
+#ifdef ROCKY_REINSTATED
 bool ASTJsonConverter::visit(InlineAssembly const& _node)
 {
 	Json::Value externalReferences(Json::arrayValue);
@@ -471,6 +478,7 @@ bool ASTJsonConverter::visit(InlineAssembly const& _node)
 	});
 	return false;
 }
+#endif
 
 bool ASTJsonConverter::visit(Block const& _node)
 {

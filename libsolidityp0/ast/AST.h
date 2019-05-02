@@ -29,7 +29,11 @@
 #include <libsolidityp0/parsing/Token.h>
 
 #include <liblangutil/SourceLocation.h>
+
+#ifdef ROCKY_REINSTATED
 #include <libevmasm/Instruction.h>
+#endif
+
 #include <libdevcore/FixedHash.h>
 
 #include <boost/noncopyable.hpp>

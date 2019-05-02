@@ -32,7 +32,9 @@
 #include <liblangutil/EVMVersion.h>
 #include <liblangutil/SourceLocation.h>
 
+#ifdef ROCKY_REINSTATED
 #include <libevmasm/LinkerObject.h>
+#endif
 
 #include <libdevcore/Common.h>
 #include <libdevcore/FixedHash.h>
