@@ -122,7 +122,7 @@ bool SyntaxTest::run(ostream& _stream, string const& _linePrefix, bool _formatte
 	// m_compiler.setEVMVersion(m_evmVersion);
 
 	// if (m_compiler.parse())
-	// 	m_compiler.analyze();
+	//	m_compiler.analyze();
 
 	// The above code is replaced below try/catch.
 	ErrorList errors;
