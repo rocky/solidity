@@ -112,10 +112,10 @@ private:
 	/// map of library names to addresses
 	std::map<std::string, h160> m_libraries;
 	/// Solidity compiler stack
+#endif
 	std::unique_ptr<dev::solidity::CompilerStack> m_compiler;
 	/// EVM version to use
 	langutil::EVMVersion m_evmVersion;
-#endif
 	/// Whether or not to colorize diagnostics output.
 	bool m_coloredOutput = true;
 };

@@ -21,7 +21,6 @@
  * Solidity command line interface.
  */
 #include <solc/CommandLineInterface.h>
-#include <libdevcore/CommonIO.h>
 
 #include "solidity/BuildInfo.h"
 #include "license.h"
@@ -85,8 +84,6 @@
 
 using namespace std;
 using namespace langutil;
-using namespace dev::solidity;
-using namespace dev;
 namespace po = boost::program_options;
 
 namespace dev
@@ -249,7 +246,6 @@ static void license()
 	exit(0);
 }
 
-
 static bool needsHumanTargetedStdout(po::variables_map const& _args)
 {
 	if (_args.count(g_argGas))
@@ -273,7 +269,6 @@ static bool needsHumanTargetedStdout(po::variables_map const& _args)
 			return true;
 	return false;
 }
-
 
 void CommandLineInterface::handleBinary(string const& _contract)
 {
@@ -964,6 +959,7 @@ bool CommandLineInterface::processInput()
 		return link();
 	}
 
+#endif
 	m_compiler.reset(new CompilerStack(fileReader));
 
 	unique_ptr<SourceReferenceFormatter> formatter;
@@ -974,11 +970,14 @@ bool CommandLineInterface::processInput()
 
 	try
 	{
+#ifdef ROCKY_HAS_GONE_OVER
 		if (m_args.count(g_argMetadataLiteral) > 0)
 			m_compiler->useMetadataLiteralSources(true);
+#endif
 		if (m_args.count(g_argInputFile))
 			m_compiler->setRemappings(m_remappings);
 		m_compiler->setSources(m_sourceCodes);
+#ifdef ROCKY_HAS_GONE_OVER
 		if (m_args.count(g_argLibraries))
 			m_compiler->setLibraries(m_libraries);
 		m_compiler->setEVMVersion(m_evmVersion);
@@ -991,6 +990,7 @@ bool CommandLineInterface::processInput()
 		settings.runYulOptimiser = m_args.count(g_strOptimizeYul);
 		settings.optimizeStackAllocation = settings.runYulOptimiser;
 		m_compiler->setOptimiserSettings(settings);
+#endif
 
 		bool successful = m_compiler->compile();
 
@@ -1047,7 +1047,6 @@ bool CommandLineInterface::processInput()
 		serr() << "Unknown exception during compilation." << endl;
 		return false;
 	}
-#endif
 
 	return true;
 }
@@ -1060,7 +1059,7 @@ void CommandLineInterface::handleCombinedJSON()
 #ifdef ROCKY_REINSTATED
 	Json::Value output(Json::objectValue);
 
-	output[g_strVersion] = "rocky fixme"; // ::dev::solidity::VersionString;
+	output[g_strVersion] = ::dev::solidity::VersionString;
 	set<string> requests;
 	boost::split(requests, m_args[g_argCombinedJson].as<string>(), boost::is_any_of(","));
 	vector<string> contracts = m_compiler->contractNames();
