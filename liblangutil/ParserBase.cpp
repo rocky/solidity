@@ -110,15 +110,22 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool 
 		while (token != _value && token != Token::EOS)
 			token = m_scanner->next();
 		std::string expectToken = ParserBase::tokenName(_value).c_str();
-		std::string mess = fmt::sprintf("In <%s> expected %s but got %s.", _lhs, expectToken.c_str(), ParserBase::tokenName(tok).c_str());
+		std::string mess = fmt::sprintf("In <%s>, %s is expected; got %s instead.", _lhs, expectToken.c_str(), ParserBase::tokenName(tok).c_str());
 		if (token == Token::EOS)
 		{
 			// rollback to where the token started, and raise exception to be caught at a higher level.
 			m_scanner->seek(startPosition);
+			m_inParserRecovery = true;
 			fatalParserError(errorLoc, mess);
 		}
 		else
-			parserError(errorLoc, mess + " Skipped to next " + expectToken + ".");
+		{
+			if (m_inParserRecovery)
+				parserWarning(fmt::sprintf("Recovered in <%s> at %s.", _lhs, expectToken.c_str()));
+			else
+				parserError(errorLoc, fmt::sprintf("%s Recovered at next %s.", mess.c_str(), expectToken.c_str()));
+			m_inParserRecovery = false;
+		}
 	}
 	if (_advance)
 		m_scanner->next();
@@ -135,6 +142,11 @@ void ParserBase::decreaseRecursionDepth()
 {
 	solAssert(m_recursionDepth > 0, "");
 	m_recursionDepth--;
+}
+
+void ParserBase::parserWarning(string const& _description)
+{
+	m_errorReporter.warning(SourceLocation{position(), endPosition(), source()}, _description);
 }
 
 void ParserBase::parserError(SourceLocation const& _location, string const& _description, bool _throw_error)
