@@ -64,7 +64,3 @@ if (NOT EMSCRIPTEN)
 		add_subdirectory(lllc)
 	endif()
 endif()
-
-if (TESTS AND NOT EMSCRIPTEN)
-	add_subdirectory(test)
-endif()
