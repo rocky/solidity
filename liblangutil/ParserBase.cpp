@@ -29,11 +29,11 @@ namespace fmt {
 
 template< class ...Args >
 std::string sprintf( const char * f, Args && ...args ) {
-    int size = snprintf( nullptr, 0, f, args... );
-    std::string res;
-    res.resize( size );
-    snprintf( & res[ 0 ], size + 1, f, args... );
-    return res;
+	int size = snprintf( nullptr, 0, f, args... );
+	std::string res;
+	res.resize( size );
+	snprintf( & res[ 0 ], size + 1, f, args... );
+	return res;
 }
 
 }
