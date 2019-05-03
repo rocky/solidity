@@ -93,7 +93,11 @@ void ParserBase::expectToken(Token _value, bool _advance)
 	Token tok = m_scanner->currentToken();
 	if (tok != _value)
 	{
-		parserError(string("Expected ") + ParserBase::tokenName(_value) + string(" but got ") + ParserBase::tokenName(tok));
+		char const *expectToken = ParserBase::tokenName(_value).c_str();
+		parserError(fmt::sprintf("Expected %s but got %s. Inserting %s before here.", expectToken, ParserBase::tokenName(tok).c_str(), expectToken));
+		// So recovery can sync or make use of the current token don't advance. Especially useful if the expected token
+		// is the only one that is missing.
+		_advance = false;
 	}
 	if (_advance)
 		m_scanner->next();
@@ -109,7 +113,7 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool 
 		SourceLocation errorLoc = SourceLocation{startPosition, endPosition(), source()};
 		while (token != _value && token != Token::EOS)
 			token = m_scanner->next();
-		std::string expectToken = ParserBase::tokenName(_value).c_str();
+		std::string expectToken = ParserBase::tokenName(_value);
 		std::string mess = fmt::sprintf("In <%s>, %s is expected; got %s instead.", _lhs, expectToken.c_str(), ParserBase::tokenName(tok).c_str());
 		if (token == Token::EOS)
 		{
@@ -127,6 +131,14 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool 
 			m_inParserRecovery = false;
 		}
 	}
+	else
+		if (m_inParserRecovery)
+		{
+			std::string expectToken = ParserBase::tokenName(_value);
+			parserWarning(fmt::sprintf("Recovered in <%s> at %s.", _lhs, expectToken.c_str()));
+			m_inParserRecovery = false;
+		}
+
 	if (_advance)
 		m_scanner->next();
 }
