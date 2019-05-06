@@ -35,11 +35,6 @@ namespace dev
 namespace solidity
 {
 
-// When the parser hits a recoverable error, this is what we throw.
-class ParserError: dev::Exception
-{
-};
-
 class Parser: public langutil::ParserBase
 {
 public:

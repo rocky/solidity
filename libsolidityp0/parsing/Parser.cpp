@@ -30,6 +30,13 @@
 #include <cctype>
 #include <vector>
 
+/// Assertion that throws an InternalCompilerError containing the given description if it is not met.
+
+#define parserCatch \
+	if (!m_errorReporter.hasErrors() || m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError)) \
+		throw /* Don't try to recover here. */ \
+
+
 using namespace std;
 using namespace langutil;
 
@@ -102,14 +109,7 @@ ASTPointer<SourceUnit> Parser::parse(shared_ptr<Scanner> const& _scanner)
 	}
 	catch (FatalError const&)
 	{
-		if (!m_errorReporter.hasErrors() || m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError))
-			throw; // Don't try to recover here.
-		return nullptr;
-	}
-	catch (ParserError const&)
-	{
-		if (!m_errorReporter.hasErrors() || m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError))
-			throw; // Don't try to recover here.
+		parserCatch;
 		return nullptr;
 	}
 }
@@ -318,8 +318,7 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 	}
 	catch (FatalError const&)
 	{
-		if (!m_errorReporter.hasErrors() || m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError))
-			throw; // Don't try to recover here.
+		parserCatch;
 		m_inParserRecovery = true;
 	}
 	nodeFactory.markEndPosition();
@@ -985,8 +984,8 @@ ASTPointer<Block> Parser::parseBlock(ASTPointer<ASTString> const& _docString)
 	}
 	catch (FatalError const&)
 	{
-		if (!m_errorReporter.hasErrors() || m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError))
-			throw; // Don't try to recover here.
+		parserCatch;
+		m_inParserRecovery = true;
 	}
 	expectTokenOrConsumeUntil(Token::RBrace, "Block");
 	return nodeFactory.createNode<Block>(_docString, statements);
@@ -1063,8 +1062,7 @@ ASTPointer<Statement> Parser::parseStatement()
 	}
 	catch (FatalError const&)
 	{
-		if (!m_errorReporter.hasErrors() || m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError))
-			throw; // Don't try to recover here.
+		parserCatch;
 		m_inParserRecovery = true;
 	}
 	if (m_inParserRecovery)

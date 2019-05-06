@@ -63,8 +63,7 @@ public:
 	void error(
 		Error::Type _type,
 		SourceLocation const& _location,
-		std::string const& _description,
-		bool _throwError = false
+		std::string const& _description
 	);
 
 	void declarationError(
@@ -79,7 +78,7 @@ public:
 
 	void parserWarning(SourceLocation const& _location, std::string const& _description);
 
-	void parserError(SourceLocation const& _location, std::string const& _description, bool _throwError = false);
+	void parserError(SourceLocation const& _location, std::string const& _description);
 
 	void fatalParserError(SourceLocation const& _location, std::string const& _description);
 
@@ -129,8 +128,7 @@ private:
 		Error::Type _type,
 		SourceLocation const& _location,
 		SecondarySourceLocation const& _secondaryLocation,
-		std::string const& _description = std::string(),
-		bool _throwError = false);
+		std::string const& _description = std::string());
 
 	void fatalError(
 		Error::Type _type,

@@ -59,7 +59,7 @@ void ErrorReporter::warning(
 	error(Error::Type::Warning, _location, _secondaryLocation, _description);
 }
 
-void ErrorReporter::error(Error::Type _type, SourceLocation const& _location, string const& _description, bool _throwError)
+void ErrorReporter::error(Error::Type _type, SourceLocation const& _location, string const& _description)
 {
 	if (checkForExcessiveErrors(_type))
 		return;
@@ -70,13 +70,9 @@ void ErrorReporter::error(Error::Type _type, SourceLocation const& _location, st
 		errinfo_comment(_description);
 
 	m_errorList.push_back(err);
-	if (_throwError)
-	{
-		BOOST_THROW_EXCEPTION(FatalError());
-	}
 }
 
-void ErrorReporter::error(Error::Type _type, SourceLocation const& _location, SecondarySourceLocation const& _secondaryLocation, string const& _description, bool _throwError)
+void ErrorReporter::error(Error::Type _type, SourceLocation const& _location, SecondarySourceLocation const& _secondaryLocation, string const& _description)
 {
 	if (checkForExcessiveErrors(_type))
 		return;
@@ -88,10 +84,6 @@ void ErrorReporter::error(Error::Type _type, SourceLocation const& _location, Se
 		errinfo_comment(_description);
 
 	m_errorList.push_back(err);
-	if (_throwError)
-	{
-		BOOST_THROW_EXCEPTION(ParserError());
-	}
 }
 
 bool ErrorReporter::checkForExcessiveErrors(Error::Type _type)
@@ -175,13 +167,12 @@ void ErrorReporter::fatalDeclarationError(SourceLocation const& _location, std::
 		_description);
 }
 
-void ErrorReporter::parserError(SourceLocation const& _location, string const& _description, bool _throwError)
+void ErrorReporter::parserError(SourceLocation const& _location, string const& _description)
 {
 	error(
 		Error::Type::ParserError,
 		_location,
-		_description,
-		_throwError
+		_description
 	);
 }
 

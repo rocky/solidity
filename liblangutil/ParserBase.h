@@ -82,15 +82,16 @@ protected:
 	void decreaseRecursionDepth();
 
 	/// Creates a @ref ParserError and annotates it with the current position and the
-	/// given @a _description. If @a _throw_error is true, then instead of returning we will
-	/// throw an exception so that a higher grammar rule has an opportunity to recover.
-	void parserError(std::string const& _description, bool _throwError = false);
-	void parserError(SourceLocation const& _location, std::string const& _description, bool _throw_error = false);
+	/// given @a _description.
+	void parserError(std::string const& _description);
+	void parserError(SourceLocation const& _location, std::string const& _description);
 
+
+#ifdef EXTENDED_PARSER_MESSAGES
 	/// Creates a @ref ParserWarning and annotates it with the current position and the
-	/// given @a _description. If @a _throw_error is true, then instead of returning we will
-	/// throw an exception so that a higher grammar rule has an opportunity to recover.
+	/// given @a _description.
 	void parserWarning(std::string const& _description);
+#endif
 
 	/// Creates a @ref ParserError and annotates it with the current position and the
 	/// given @a _description. Throws the FatalError.

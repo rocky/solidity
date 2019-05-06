@@ -100,7 +100,7 @@ void ParserBase::expectToken(Token _value, bool _advance)
 	if (tok != _value)
 	{
 		std::string const expectToken = ParserBase::tokenName(_value);
-		parserError(string("Expected ") + expectToken + string(" but got ") + tokenName(tok) + string(". Inserting ") + expectToken + " before here.");
+		parserError(string("Expected ") + expectToken + string(" but got ") + tokenName(tok) + string("."));
 		// Do not advance so that recovery can sync or make use of the current token. This is especially useful if the expected token
 		// is the only one that is missing and is at the end of a construct.
 		// "{ ... ; }" is such an example.
@@ -132,18 +132,22 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool 
 		}
 		else
 		{
+#ifdef EXTENDED_PARSER_MESSAGES
 			if (m_inParserRecovery)
 				parserWarning(fmt::sprintf("Recovered in <%s> at %s.", _lhs, expectToken.c_str()));
 			else
 				parserError(errorLoc, fmt::sprintf("%s Recovered at next %s.", mess.c_str(), expectToken.c_str()));
+#endif
 			m_inParserRecovery = false;
 		}
 	}
 	else
 		if (m_inParserRecovery)
 		{
+#ifdef EXTENDED_PARSER_MESSAGES
 			std::string expectToken = ParserBase::tokenName(_value);
 			parserWarning(fmt::sprintf("Recovered in <%s> at %s.", _lhs, expectToken.c_str()));
+#endif
 			m_inParserRecovery = false;
 		}
 
@@ -164,19 +168,21 @@ void ParserBase::decreaseRecursionDepth()
 	m_recursionDepth--;
 }
 
+#ifdef EXTENDED_PARSER_MESSAGES
 void ParserBase::parserWarning(string const& _description)
 {
 	m_errorReporter.warning(SourceLocation{position(), endPosition(), source()}, _description);
 }
+#endif
 
-void ParserBase::parserError(SourceLocation const& _location, string const& _description, bool _throw_error)
+void ParserBase::parserError(SourceLocation const& _location, string const& _description)
 {
-	m_errorReporter.parserError(_location, _description, _throw_error);
+	m_errorReporter.parserError(_location, _description);
 }
 
-void ParserBase::parserError(string const& _description, bool _throw_error)
+void ParserBase::parserError(string const& _description)
 {
-	m_errorReporter.parserError(SourceLocation{position(), endPosition(), source()}, _description, _throw_error);
+	m_errorReporter.parserError(SourceLocation{position(), endPosition(), source()}, _description);
 }
 
 void ParserBase::fatalParserError(string const& _description)

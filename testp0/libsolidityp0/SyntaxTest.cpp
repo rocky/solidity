@@ -134,10 +134,6 @@ bool SyntaxTest::run(ostream& _stream, string const& _linePrefix, bool _formatte
 	{
 		// no-op
 	}
-	catch (ParserError const& /*_exception*/)
-	{
-		// no-op
-	}
 
 
 	// for (auto const& currentError: filterErrors(m_compiler.errors(), true))
