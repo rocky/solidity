@@ -6,6 +6,5 @@ pragma solidity >=0.0.0;
 // not be able to syncronize to ';'. Advance again and
 // '}' is deleted and then we can't synchronize the contract.
 contract Error2 {
-	mapping (address => uint balances;
-
+	mapping (address => uint balances; // missing ) before "balances"
 }

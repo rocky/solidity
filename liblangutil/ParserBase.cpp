@@ -28,11 +28,17 @@
 namespace fmt {
 
 template< class ...Args >
-std::string sprintf( const char * f, Args && ...args ) {
+std::string sprintf( char const * f, Args && ...args ) {
 	int size = snprintf( nullptr, 0, f, args... );
 	std::string res;
 	res.resize( size );
 	snprintf( & res[ 0 ], size + 1, f, args... );
+	// Some snprintf's pad nulls to the nearest word.
+	// Remove them.
+	while (res[size-1] == '\0' && size > 0) {
+		size--;
+	}
+	res.resize( size );
 	return res;
 }
 
@@ -93,10 +99,12 @@ void ParserBase::expectToken(Token _value, bool _advance)
 	Token tok = m_scanner->currentToken();
 	if (tok != _value)
 	{
-		char const *expectToken = ParserBase::tokenName(_value).c_str();
-		parserError(fmt::sprintf("Expected %s but got %s. Inserting %s before here.", expectToken, ParserBase::tokenName(tok).c_str(), expectToken));
-		// So recovery can sync or make use of the current token don't advance. Especially useful if the expected token
-		// is the only one that is missing.
+		std::string const expectToken = ParserBase::tokenName(_value);
+		parserError(string("Expected ") + expectToken + string(" but got ") + tokenName(tok) + string(". Inserting ") + expectToken + " before here.");
+		// Do not advance so that recovery can sync or make use of the current token. This is especially useful if the expected token
+		// is the only one that is missing and is at the end of a construct.
+		// "{ ... ; }" is such an example.
+		//        ^
 		_advance = false;
 	}
 	if (_advance)
@@ -113,8 +121,8 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool 
 		SourceLocation errorLoc = SourceLocation{startPosition, endPosition(), source()};
 		while (token != _value && token != Token::EOS)
 			token = m_scanner->next();
-		std::string expectToken = ParserBase::tokenName(_value);
-		std::string mess = fmt::sprintf("In <%s>, %s is expected; got %s instead.", _lhs, expectToken.c_str(), ParserBase::tokenName(tok).c_str());
+		std::string const expectToken = ParserBase::tokenName(_value);
+		std::string const mess = fmt::sprintf("In <%s>, %s is expected; got %s instead.", _lhs, expectToken.c_str(), ParserBase::tokenName(tok).c_str());
 		if (token == Token::EOS)
 		{
 			// rollback to where the token started, and raise exception to be caught at a higher level.
