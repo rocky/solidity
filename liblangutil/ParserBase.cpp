@@ -100,7 +100,10 @@ void ParserBase::expectToken(Token _value, bool _advance)
 	if (tok != _value)
 	{
 		std::string const expectToken = ParserBase::tokenName(_value);
-		parserError(string("Expected ") + expectToken + string(" but got ") + tokenName(tok) + string("."));
+		if (m_parserErrorRecovery)
+			parserError(string("Expected ") + expectToken + string(" but got ") + tokenName(tok));
+		else
+			fatalParserError(string("Expected ") + expectToken + string(" but got ") + tokenName(tok));
 		// Do not advance so that recovery can sync or make use of the current token. This is especially useful if the expected token
 		// is the only one that is missing and is at the end of a construct.
 		// "{ ... ; }" is such an example.

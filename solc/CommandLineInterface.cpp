@@ -743,7 +743,7 @@ Allowed options)",
 		(g_argColor.c_str(), "Force colored output.")
 		(g_argNoColor.c_str(), "Explicitly disable colored output, disabling terminal auto-detection.")
 		(g_argNewReporter.c_str(), "Enables new diagnostics reporter.")
-		(g_argErrorRecovery.c_str(), "Enables additional parser error recovery.")
+		(g_argErrorRecovery.c_str(), "Disables additional parser error recovery.")
 		(g_argIgnoreMissingFiles.c_str(), "Ignore missing files.");
 	po::options_description outputComponents("Output Components");
 	outputComponents.add_options()
@@ -983,11 +983,15 @@ bool CommandLineInterface::processInput()
 #ifdef ROCKY_HAS_GONE_OVER
 		if (m_args.count(g_argLibraries))
 			m_compiler->setLibraries(m_libraries);
+#endif
 		if (m_args.count(g_argErrorRecovery))
+			m_compiler->setParserErrorRecovery(false);
+		else
 			m_compiler->setParserErrorRecovery(true);
 		m_compiler->setEVMVersion(m_evmVersion);
 		// TODO: Perhaps we should not compile unless requested
 
+#ifdef ROCKY_HAS_GONE_OVER
 		m_compiler->enableIRGeneration(m_args.count(g_argIR));
 
 		OptimiserSettings settings = m_args.count(g_argOptimize) ? OptimiserSettings::standard() : OptimiserSettings::minimal();
