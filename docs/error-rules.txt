@@ -1,0 +1,6 @@
+// Error catches exceptions from rules called below it.
+
+SourceUnit = Error $
+Block = '{' Error '}'
+ContractDefinition = '{' Error '}'
+Statement = Error ';'

@@ -140,6 +140,14 @@ public:
 	/// Set the EVM version used before running compile.
 	/// When called without an argument it will revert to the default version.
 	/// Must be set before parsing.
+	void setParserErrorRecovery(bool _wantErrorRecovery = false) {
+		m_parserErrorRecovery = _wantErrorRecovery;
+	}
+
+
+	/// Set the EVM version used before running compile.
+	/// When called without an argument it will revert to the default version.
+	/// Must be set before parsing.
 	void setEVMVersion(langutil::EVMVersion _version = langutil::EVMVersion{});
 
 	/// Sets the list of requested contract names. If empty, no filtering is performed and every contract
@@ -410,6 +418,7 @@ private:
 	langutil::ErrorList m_errorList;
 	langutil::ErrorReporter m_errorReporter;
 	bool m_metadataLiteralSources = false;
+	bool m_parserErrorRecovery = false;
 	State m_stackState = Empty;
 };
 

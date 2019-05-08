@@ -36,7 +36,13 @@ class Scanner;
 class ParserBase
 {
 public:
-	explicit ParserBase(ErrorReporter& errorReporter): m_errorReporter(errorReporter) {}
+	/// Set @_parserErrorRecover to true  for additional Steve-Johnson-style error recovery.
+	/// This is experimental and intended for use in side IDE's and front-ends that
+	/// can use additional information and partial AST information even when errors occur.
+	explicit ParserBase(ErrorReporter& errorReporter, bool _parserErrorRecovery = false): m_errorReporter(errorReporter)
+	{
+		m_parserErrorRecovery = _parserErrorRecovery;
+	}
 
 	std::shared_ptr<CharStream> source() const { return m_scanner->charStream(); }
 
@@ -106,6 +112,7 @@ protected:
 	/// True if we are in parser error recovery. Usually this means we are scanning for a synchronization
 	/// token like ';', or '}', We use this to reduce cascaded error messages.
 	bool m_inParserRecovery = false;
+	bool m_parserErrorRecovery = false;
 };
 
 }

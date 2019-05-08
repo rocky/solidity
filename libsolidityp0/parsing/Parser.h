@@ -38,7 +38,7 @@ namespace solidity
 class Parser: public langutil::ParserBase
 {
 public:
-	explicit Parser(langutil::ErrorReporter& _errorReporter): ParserBase(_errorReporter) {}
+	explicit Parser(langutil::ErrorReporter& _errorReporter, bool _errorRecovery = false): ParserBase(_errorReporter, _errorRecovery) {}
 
 	ASTPointer<SourceUnit> parse(std::shared_ptr<langutil::Scanner> const& _scanner);
 

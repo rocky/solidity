@@ -30,11 +30,12 @@
 #include <cctype>
 #include <vector>
 
-/// Assertion that throws an InternalCompilerError containing the given description if it is not met.
-
 #define parserCatch \
-	if (!m_errorReporter.hasErrors() || m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError)) \
-		throw /* Don't try to recover here. */ \
+	if (!m_errorReporter.hasErrors() || \
+		(!m_parserErrorRecovery) ||		\
+		m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError)) \
+		BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */ \
+	m_inParserRecovery = true;
 
 
 using namespace std;
@@ -77,7 +78,7 @@ private:
 	SourceLocation m_location;
 };
 
-ASTPointer<SourceUnit> Parser::parse(shared_ptr<Scanner> const& _scanner)
+	ASTPointer<SourceUnit> Parser::parse(shared_ptr<Scanner> const& _scanner)
 {
 	try
 	{
@@ -109,7 +110,8 @@ ASTPointer<SourceUnit> Parser::parse(shared_ptr<Scanner> const& _scanner)
 	}
 	catch (FatalError const&)
 	{
-		parserCatch;
+		if (m_errorReporter.errors().empty())
+			throw; // Something is weird here, rather throw again.
 		return nullptr;
 	}
 }
@@ -265,7 +267,7 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 	ASTPointer<ASTString> docString;
 	vector<ASTPointer<InheritanceSpecifier>> baseContracts;
 	vector<ASTPointer<ASTNode>> subNodes;
-	ContractDefinition::ContractKind contractKind;
+	ContractDefinition::ContractKind contractKind = ContractDefinition::ContractKind::Contract;
 	try
 	{
 		if (m_scanner->currentCommentLiteral() != "")
@@ -319,7 +321,6 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 	catch (FatalError const&)
 	{
 		parserCatch;
-		m_inParserRecovery = true;
 	}
 	nodeFactory.markEndPosition();
 	if (m_inParserRecovery)
@@ -985,7 +986,6 @@ ASTPointer<Block> Parser::parseBlock(ASTPointer<ASTString> const& _docString)
 	catch (FatalError const&)
 	{
 		parserCatch;
-		m_inParserRecovery = true;
 	}
 	expectTokenOrConsumeUntil(Token::RBrace, "Block");
 	return nodeFactory.createNode<Block>(_docString, statements);
@@ -1063,7 +1063,6 @@ ASTPointer<Statement> Parser::parseStatement()
 	catch (FatalError const&)
 	{
 		parserCatch;
-		m_inParserRecovery = true;
 	}
 	if (m_inParserRecovery)
 		expectTokenOrConsumeUntil(Token::Semicolon, "Statement");
