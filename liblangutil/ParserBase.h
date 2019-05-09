@@ -93,11 +93,9 @@ protected:
 	void parserError(SourceLocation const& _location, std::string const& _description);
 
 
-#ifdef EXTENDED_PARSER_MESSAGES
 	/// Creates a @ref ParserWarning and annotates it with the current position and the
 	/// given @a _description.
 	void parserWarning(std::string const& _description);
-#endif
 
 	/// Creates a @ref ParserError and annotates it with the current position and the
 	/// given @a _description. Throws the FatalError.

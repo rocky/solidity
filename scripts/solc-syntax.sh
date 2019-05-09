@@ -5,7 +5,7 @@ cd ..
 ROOTDIR=$(pwd)
 BUILDDIR="${ROOTDIR}/build-phase0-debug"
 solc=${ROOTDIR}/build-phase0-debug/solc/solc
-cd ${ROOTDIR}/testp0/libsolidityp0/syntaxTests/parsing/errorRecovery/
+cd ${ROOTDIR}/testp0/libsolidityp0/syntaxRecoveryTests/
 for file in *.sol ; do
     echo ==============================
     echo $(pwd)/$file

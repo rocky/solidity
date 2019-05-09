@@ -24,26 +24,6 @@
 #include <liblangutil/Scanner.h>
 #include <liblangutil/ErrorReporter.h>
 
-// Should this be moved somewhere more global
-namespace fmt {
-
-template< class ...Args >
-std::string sprintf( char const * f, Args && ...args ) {
-	int size = snprintf( nullptr, 0, f, args... );
-	std::string res;
-	res.resize( size );
-	snprintf( & res[ 0 ], size + 1, f, args... );
-	// Some snprintf's pad nulls to the nearest word.
-	// Remove them.
-	while (res[size-1] == '\0' && size > 0) {
-		size--;
-	}
-	res.resize( size );
-	return res;
-}
-
-}
-
 using namespace std;
 using namespace langutil;
 
@@ -80,18 +60,18 @@ Token ParserBase::advance()
 std::string ParserBase::tokenName(Token _token)
 {
 	if (_token == Token::Identifier)
-		return string("identifier");
+		return "identifier";
 	else if (_token == Token::EOS)
-		return string("end of source");
+		return "end of source";
 	else if (TokenTraits::isReservedKeyword(_token))
-		return string("reserved keyword '") + TokenTraits::friendlyName(_token) + "'";
+		return "reserved keyword '" + TokenTraits::friendlyName(_token) + "'";
 	else if (TokenTraits::isElementaryTypeName(_token)) //for the sake of accuracy in reporting
 	{
 		ElementaryTypeNameToken elemTypeName = m_scanner->currentElementaryTypeNameToken();
-		return string("'") + elemTypeName.toString() + "'";
+		return "'" + elemTypeName.toString() + "'";
 	}
 	else
-		return string("'") + TokenTraits::friendlyName(_token) + "'";
+		return "'" + TokenTraits::friendlyName(_token) + "'";
 };
 
 void ParserBase::expectToken(Token _value, bool _advance)
@@ -101,9 +81,9 @@ void ParserBase::expectToken(Token _value, bool _advance)
 	{
 		std::string const expectToken = ParserBase::tokenName(_value);
 		if (m_parserErrorRecovery)
-			parserError(string("Expected ") + expectToken + string(" but got ") + tokenName(tok));
+			parserError("Expected " + expectToken + " but got " + tokenName(tok));
 		else
-			fatalParserError(string("Expected ") + expectToken + string(" but got ") + tokenName(tok));
+			fatalParserError("Expected " + expectToken + " but got " + tokenName(tok));
 		// Do not advance so that recovery can sync or make use of the current token. This is especially useful if the expected token
 		// is the only one that is missing and is at the end of a construct.
 		// "{ ... ; }" is such an example.
@@ -125,7 +105,7 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool 
 		while (token != _value && token != Token::EOS)
 			token = m_scanner->next();
 		std::string const expectToken = ParserBase::tokenName(_value);
-		std::string const mess = fmt::sprintf("In <%s>, %s is expected; got %s instead.", _lhs, expectToken.c_str(), ParserBase::tokenName(tok).c_str());
+		std::string const mess = "In <" + string(_lhs) + ">, " + expectToken + "is expected; got " +  ParserBase::tokenName(tok) +  "instead.";
 		if (token == Token::EOS)
 		{
 			// rollback to where the token started, and raise exception to be caught at a higher level.
@@ -135,22 +115,18 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool 
 		}
 		else
 		{
-#ifdef EXTENDED_PARSER_MESSAGES
 			if (m_inParserRecovery)
-				parserWarning(fmt::sprintf("Recovered in <%s> at %s.", _lhs, expectToken.c_str()));
+				parserWarning("Recovered in <" + string(_lhs) + "> at " + expectToken + ".");
 			else
-				parserError(errorLoc, fmt::sprintf("%s Recovered at next %s.", mess.c_str(), expectToken.c_str()));
-#endif
+				parserError(errorLoc, mess + "Recovered at next " + expectToken);
 			m_inParserRecovery = false;
 		}
 	}
 	else
 		if (m_inParserRecovery)
 		{
-#ifdef EXTENDED_PARSER_MESSAGES
 			std::string expectToken = ParserBase::tokenName(_value);
-			parserWarning(fmt::sprintf("Recovered in <%s> at %s.", _lhs, expectToken.c_str()));
-#endif
+			parserWarning("Recovered in <" + string(_lhs) + "> at " + expectToken + ".");
 			m_inParserRecovery = false;
 		}
 
@@ -171,12 +147,10 @@ void ParserBase::decreaseRecursionDepth()
 	m_recursionDepth--;
 }
 
-#ifdef EXTENDED_PARSER_MESSAGES
 void ParserBase::parserWarning(string const& _description)
 {
 	m_errorReporter.warning(SourceLocation{position(), endPosition(), source()}, _description);
 }
-#endif
 
 void ParserBase::parserError(SourceLocation const& _location, string const& _description)
 {
