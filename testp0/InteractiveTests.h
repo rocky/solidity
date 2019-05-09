@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include <testparser/TestCase.h>
-#include <testparser/libsolidityp0/SyntaxTest.h>
+#include <testp0/TestCase.h>
+#include <testp0/libsolidityp0/SyntaxTest.h>
 
 #include <boost/filesystem.hpp>
 
@@ -45,8 +45,7 @@ struct Testsuite
 Testsuite const g_interactiveTestsuites[] = {
 /*
 	Title                  Path            Subpath                SMT    IPC    Creator function */
-// rocky
-//	{"Semantic",            "libsolidity", "semanticTests",       false, true,  &SemanticTest::create},
+	{"Syntax",              "libsolidity", "syntaxTests",         false, false, &SyntaxTest::create},
 };
 
 }

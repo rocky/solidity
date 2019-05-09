@@ -17,8 +17,8 @@
 
 #pragma once
 
+#include <testp0/libsolidityp0/AnalysisFramework.h>
 #include <testp0/TestCase.h>
-#include <liblangutil/EVMVersion.h>
 #include <liblangutil/Exceptions.h>
 #include <libdevcore/AnsiColorized.h>
 
@@ -50,56 +50,24 @@ struct SyntaxTestError
 };
 
 
-class SyntaxTest
+class SyntaxTest: AnalysisFramework, public EVMVersionRestrictedTestCase
 {
 public:
-	// static std::unique_ptr<TestCase> create(dev::solidity::Config const& _config)
-	// { return std::make_unique<SyntaxTest>(_config.filename, _config.evmVersion); }
-	SyntaxTest(std::string const& _filename);
+	/* static std::unique_ptr<TestCase> create(Config const& _config) */
+	/* { return std::make_unique<SyntaxTest>(_config.filename, _config.evmVersion); } */
+	SyntaxTest(std::string const& _filename, langutil::EVMVersion _evmVersion);
 
-	bool run(std::ostream& _stream, std::string const& _linePrefix = "", bool _formatted = false);
+	TestResult run(std::ostream& _stream, std::string const& _linePrefix = "", bool _formatted = false) override;
 
-	void printSource(std::ostream &_stream, std::string const &_linePrefix = "", bool _formatted = false) const;
-	void printUpdatedExpectations(std::ostream& _stream, std::string const& _linePrefix) const
+	void printSource(std::ostream &_stream, std::string const &_linePrefix = "", bool _formatted = false) const override;
+	void printUpdatedExpectations(std::ostream& _stream, std::string const& _linePrefix) const override
 	{
 		if (!m_errorList.empty())
 			printErrorList(_stream, m_errorList, _linePrefix, false);
 	}
 
 	static std::string errorMessage(Exception const& _e);
-
-	// FIXME: Duplicated from TestCase.
-	std::string parseSourceAndSettings(std::istream& _file);
-	/// Parsed settings.
-	std::map<std::string, std::string> m_settings;
-	static void expect(std::string::iterator& _it, std::string::iterator _end, std::string::value_type _c);
-
-	static std::vector<SyntaxTestError> parseExpectations(std::istream& _stream);
-
-	std::string m_source;
-	std::vector<SyntaxTestError> m_expectations;
-	std::vector<SyntaxTestError> m_errorList;
-	langutil::EVMVersion const m_evmVersion;
-
-
-	template<typename IteratorType>
-	static void skipWhitespace(IteratorType& _it, IteratorType _end)
-	{
-		while (_it != _end && isspace(*_it))
-			++_it;
-	}
-
-	template<typename IteratorType>
-	static void skipSlashes(IteratorType& _it, IteratorType _end)
-	{
-		while (_it != _end && *_it == '/')
-			++_it;
-	}
-
-	virtual bool printExpectationAndError(std::ostream& _stream, std::string const& _linePrefix = "", bool _formatted = false);
-
 protected:
-
 	static void printErrorList(
 		std::ostream& _stream,
 		std::vector<SyntaxTestError> const& _errors,
@@ -107,7 +75,14 @@ protected:
 		bool _formatted = false
 	);
 
+	virtual bool printExpectationAndError(std::ostream& _stream, std::string const& _linePrefix = "", bool _formatted = false);
 
+	static std::vector<SyntaxTestError> parseExpectations(std::istream& _stream);
+
+	std::string m_source;
+	std::vector<SyntaxTestError> m_expectations;
+	std::vector<SyntaxTestError> m_errorList;
+	langutil::EVMVersion const m_evmVersion;
 };
 
 }

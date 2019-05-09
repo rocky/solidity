@@ -15,10 +15,8 @@
 	along with solidity.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <testp0/libsolidityp0/Common.h>
 #include <testp0/libsolidityp0/SyntaxTest.h>
 #include <testp0/Options.h>
-#include <testp0/TestCase.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/throw_exception.hpp>
@@ -52,56 +50,9 @@ int parseUnsignedInteger(string::iterator& _it, string::iterator _end)
 	return result;
 }
 
-// Copied from SolidityParser.cpp
-ASTPointer<ContractDefinition> parseText(std::string const& _source, ErrorList& _errors)
-{
-	ErrorReporter errorReporter(_errors);
-	ASTPointer<SourceUnit> sourceUnit = Parser(errorReporter).parse(std::make_shared<Scanner>(CharStream(_source, "")));
-	if (!sourceUnit)
-		return ASTPointer<ContractDefinition>();
-	for (ASTPointer<ASTNode> const& node: sourceUnit->nodes())
-		if (ASTPointer<ContractDefinition> contract = dynamic_pointer_cast<ContractDefinition>(node))
-			return contract;
-	BOOST_FAIL("No contract found in source.");
-	return ASTPointer<ContractDefinition>();
 }
 
-}
-
-// Duplicated from TestCase.cpp
-string SyntaxTest::parseSourceAndSettings(istream& _stream)
-{
-	string source;
-	string line;
-	static string const settingsDelimiter("// ====");
-	static string const delimiter("// ----");
-	bool sourcePart = true;
-	while (getline(_stream, line))
-	{
-		if (boost::algorithm::starts_with(line, delimiter))
-			break;
-		else if (boost::algorithm::starts_with(line, settingsDelimiter))
-			sourcePart = false;
-		else if (sourcePart)
-			source += line + "\n";
-		else if (boost::algorithm::starts_with(line, "// "))
-		{
-			size_t colon = line.find(':');
-			if (colon == string::npos)
-				throw runtime_error(string("Expected \":\" inside setting."));
-			string key = line.substr(3, colon - 3);
-			string value = line.substr(colon + 1);
-			boost::algorithm::trim(key);
-			boost::algorithm::trim(value);
-			m_settings[key] = value;
-		}
-		else
-			throw runtime_error(string("Expected \"//\" or \"// ---\" to terminate settings and source."));
-	}
-	return source;
-}
-
-SyntaxTest::SyntaxTest(string const& _filename)
+SyntaxTest::SyntaxTest(string const& _filename, langutil::EVMVersion _evmVersion): m_evmVersion(_evmVersion)
 {
 	ifstream file(_filename);
 	if (!file)
@@ -112,32 +63,21 @@ SyntaxTest::SyntaxTest(string const& _filename)
 	m_expectations = parseExpectations(file);
 }
 
-bool SyntaxTest::run(ostream& _stream, string const& _linePrefix, bool _formatted)
+TestCase::TestResult SyntaxTest::run(ostream& _stream, string const& _linePrefix, bool _formatted)
 {
 	string const versionPragma = "pragma solidity >=0.0;\n";
+	compiler().reset();
+	compiler().setSources({{"", versionPragma + m_source}});
+	compiler().setEVMVersion(m_evmVersion);
 
-	// rocky: requires "AnalysisFrameWork which we don't have
-	// m_compiler.reset();
-	// m_compiler.setSources({{"", versionPragma + m_source}});
-	// m_compiler.setEVMVersion(m_evmVersion);
+#ifdef ROCKY_REINSTATED
+	if (compiler().parse())
+		compiler().analyze();
+#else
+	compiler().parse();
+#endif
 
-	// if (m_compiler.parse())
-	//	m_compiler.analyze();
-
-	// The above code is replaced below try/catch.
-	ErrorList errors;
-	try
-	{
-		parseText(m_source, errors);
-	}
-	catch (FatalError const& /*_exception*/)
-	{
-		// no-op
-	}
-
-
-	// for (auto const& currentError: filterErrors(m_compiler.errors(), true))
-	for (auto const& currentError: errors)
+	for (auto const& currentError: filterErrors(compiler().errors(), true))
 	{
 		int locationStart = -1, locationEnd = -1;
 		if (auto location = boost::get_error_info<errinfo_sourceLocation>(*currentError))
@@ -156,7 +96,7 @@ bool SyntaxTest::run(ostream& _stream, string const& _linePrefix, bool _formatte
 		});
 	}
 
-	return printExpectationAndError(_stream, _linePrefix, _formatted);
+	return printExpectationAndError(_stream, _linePrefix, _formatted) ? TestResult::Success : TestResult::Failure;
 }
 
 bool SyntaxTest::printExpectationAndError(ostream& _stream, string const& _linePrefix, bool _formatted)
@@ -308,11 +248,4 @@ vector<SyntaxTestError> SyntaxTest::parseExpectations(istream& _stream)
 		});
 	}
 	return expectations;
-}
-
-void SyntaxTest::expect(string::iterator& _it, string::iterator _end, string::value_type _c)
-{
-	if (_it == _end || *_it != _c)
-		throw runtime_error(string("Invalid test expectation. Expected: \"") + _c + "\".");
-	++_it;
 }
