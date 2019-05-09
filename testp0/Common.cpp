@@ -15,7 +15,7 @@
 	along with solidity.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Common.h"
+#include <testp0/Common.h>
 
 #include <libdevcore/Assertions.h>
 #include <boost/filesystem.hpp>
@@ -30,7 +30,7 @@ namespace testp0
 {
 
 /// If non-empty returns the value of the env. variable ETH_TEST_PATH, otherwise
-/// it tries to find a path that contains the directories "libsolidityparse/syntaxTests"
+/// it tries to find a path that contains the directories "libsolidityp0/syntaxRecoveryTests"
 /// and returns it if found.
 /// The routine searches in the current directory, and inside the "test" directory
 /// starting from the current directory and up to three levels up.
@@ -42,15 +42,15 @@ boost::filesystem::path testPath()
 
 	auto const searchPath =
 	{
-		fs::current_path() / ".." / ".." / ".." / "test",
-		fs::current_path() / ".." / ".." / "test",
-		fs::current_path() / ".." / "test",
-		fs::current_path() / "test",
+		fs::current_path() / ".." / "testp0",
+		fs::current_path() / ".." / ".." / "test00",
+		fs::current_path() / "testp0",
+		fs::current_path() / ".." / ".." / ".." / "testp0",
 		fs::current_path()
 	};
 	for (auto const& basePath: searchPath)
 	{
-		fs::path syntaxTestPath = basePath / "libsolidityparser" / "syntaxTests";
+		fs::path syntaxTestPath = basePath / "libsolidityp0" / "syntaxRecoveryTests";
 		if (fs::exists(syntaxTestPath) && fs::is_directory(syntaxTestPath))
 			return basePath;
 	}
@@ -63,6 +63,16 @@ CommonOptions::CommonOptions(std::string _caption):
 		po::options_description::m_default_line_length - 23
 	)
 {
+	options.add_options()
+		("evm-version", po::value(&evmVersionString), "which evm version to use")
+		("testpath", po::value<fs::path>(&this->testPath)->default_value(dev::testp0::testPath()), "path to test files")
+#ifdef ROCKY_REINSTATED
+		("ipcpath", po::value<fs::path>(&ipcPath)->default_value(IPCEnvOrDefaultPath()), "path to ipc socket")
+		("no-ipc", po::bool_switch(&disableIPC), "disable semantic tests")
+		("no-smt", po::bool_switch(&disableSMT), "disable SMT checker");
+#else
+	;
+#endif
 }
 
 void CommonOptions::validate() const
@@ -85,8 +95,24 @@ bool CommonOptions::parse(int argc, char const* const* argv)
 
 	po::command_line_parser cmdLineParser(argc, argv);
 	cmdLineParser.options(options);
+	po::store(cmdLineParser.run(), arguments);
 	po::notify(arguments);
+
 	return true;
+}
+
+
+langutil::EVMVersion CommonOptions::evmVersion() const
+{
+	if (!evmVersionString.empty())
+	{
+		auto version = langutil::EVMVersion::fromString(evmVersionString);
+		if (!version)
+			throw std::runtime_error("Invalid EVM version: " + evmVersionString);
+		return *version;
+	}
+	else
+		return langutil::EVMVersion();
 }
 
 }

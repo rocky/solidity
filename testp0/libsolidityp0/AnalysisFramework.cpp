@@ -49,9 +49,7 @@ AnalysisFramework::parseAnalyseAndReturnError(
 {
 	compiler().reset();
 	compiler().setSources({{"", _insertVersionPragma ? "pragma solidity >=0.0;\n" + _source : _source}});
-#ifdef ROCKY_REINSTATED
 	compiler().setEVMVersion(dev::testp0::Options::get().evmVersion());
-#endif
 	if (!compiler().parse())
 	{
 		BOOST_FAIL("Parsing contract failed in analysis test suite:" + formatErrors());

@@ -20,7 +20,14 @@
  * Unit tests for the solidity parser.
  */
 
-#include <testp0/libsolidityp0/Common.h>
+#include <string>
+#include <memory>
+#include <liblangutil/Scanner.h>
+#include <libsolidityp0/parsing/Parser.h>
+#include <liblangutil/ErrorReporter.h>
+#include <testp0/Options.h>
+#include <testp0/libsolidityp0/ErrorCheck.h>
+#include <libsolidityp0/ast/ASTVisitor.h>
 
 using namespace std;
 using namespace langutil;
@@ -47,6 +54,7 @@ ASTPointer<ContractDefinition> parseText(std::string const& _source, ErrorList& 
 	return ASTPointer<ContractDefinition>();
 }
 
+#ifdef ROCKY_REINSTATED
 bool successParse(std::string const& _source)
 {
 	ErrorList errors;
@@ -67,6 +75,7 @@ bool successParse(std::string const& _source)
 	BOOST_CHECK(Error::containsOnlyWarnings(errors));
 	return true;
 }
+#endif
 
 Error getError(std::string const& _source)
 {
@@ -84,6 +93,7 @@ Error getError(std::string const& _source)
 	return *error;
 }
 
+#ifdef ROCKY_REINSTATED
 void checkFunctionNatspec(
 	FunctionDefinition const* _function,
 	std::string const& _expectedDoc
@@ -93,8 +103,17 @@ void checkFunctionNatspec(
 	BOOST_CHECK_MESSAGE(doc != nullptr, "Function does not have Natspec Doc as expected");
 	BOOST_CHECK_EQUAL(*doc, _expectedDoc);
 }
-
+#endif
 }
+
+#define CHECK_PARSE_ERROR(source, substring) \
+do \
+{\
+	Error err = getError((source)); \
+	BOOST_CHECK(searchErrorMessage(err, (substring))); \
+}\
+while(0)
+
 
 BOOST_AUTO_TEST_SUITE(SolidityParser)
 
@@ -106,6 +125,7 @@ BOOST_AUTO_TEST_CASE(unsatisfied_version)
 	CHECK_PARSE_ERROR(text, "Source file requires different compiler version");
 }
 
+#ifdef ROCKY_REINSTATED
 BOOST_AUTO_TEST_CASE(unsatisfied_version_followed_by_invalid_syntax)
 {
 	char const* text = R"(
@@ -580,8 +600,6 @@ BOOST_AUTO_TEST_CASE(complex_import)
 	BOOST_CHECK(successParse(text));
 }
 
-// FIXME: make this dynamic
-#ifdef LONG_TESTS
 BOOST_AUTO_TEST_CASE(recursion_depth1)
 {
 	string text("contract C { bytes");

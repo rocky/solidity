@@ -45,7 +45,7 @@ struct Testsuite
 Testsuite const g_interactiveTestsuites[] = {
 /*
 	Title                  Path            Subpath                SMT    IPC    Creator function */
-	{"Syntax",              "libsolidity", "syntaxTests",         false, false, &SyntaxTest::create},
+	{"Syntax",              "libsolidityp0", "syntaxRecoveryTests",         false, false, &SyntaxTest::create},
 };
 
 }

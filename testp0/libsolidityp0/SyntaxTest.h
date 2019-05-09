@@ -53,8 +53,8 @@ struct SyntaxTestError
 class SyntaxTest: AnalysisFramework, public EVMVersionRestrictedTestCase
 {
 public:
-	/* static std::unique_ptr<TestCase> create(Config const& _config) */
-	/* { return std::make_unique<SyntaxTest>(_config.filename, _config.evmVersion); } */
+	static std::unique_ptr<TestCase> create(Config const& _config)
+	{ return std::make_unique<SyntaxTest>(_config.filename, _config.evmVersion); }
 	SyntaxTest(std::string const& _filename, langutil::EVMVersion _evmVersion);
 
 	TestResult run(std::ostream& _stream, std::string const& _linePrefix = "", bool _formatted = false) override;

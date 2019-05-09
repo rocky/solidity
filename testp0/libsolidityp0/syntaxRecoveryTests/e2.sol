@@ -9,3 +9,5 @@ pragma solidity >=0.0.0;
 contract Error2 {
 	mapping (address => uint balances; // missing ) before "balances"
 }
+// ----
+// ParserError: (407-415): Expected ')' but got identifier

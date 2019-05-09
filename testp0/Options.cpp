@@ -51,8 +51,8 @@ Options::Options()
 		return;
 
 	options.add_options()
-		("optimize", po::bool_switch(&optimize), "enables optimization")
-		("abiencoderv2", po::bool_switch(&useABIEncoderV2), "enables abi encoder v2")
+		// ("optimize", po::bool_switch(&optimize), "enables optimization")
+		// ("abiencoderv2", po::bool_switch(&useABIEncoderV2), "enables abi encoder v2")
 		("show-messages", po::bool_switch(&showMessages), "enables message output");
 
 	parse(suite.argc, suite.argv);

@@ -35,7 +35,7 @@
 
 #pragma GCC diagnostic pop
 
-#include <testp0/TestCase.h>
+#include <testp0/InteractiveTests.h>
 #include <testp0/Options.h>
 
 #include <boost/algorithm/string.hpp>
@@ -44,17 +44,136 @@
 #include <string>
 
 using namespace boost::unit_test;
+using namespace dev::solidity::testparser;
 namespace fs = boost::filesystem;
 using namespace std;
 
 namespace
 {
+void removeTestSuite(std::string const& _name)
+{
+	master_test_suite_t& master = framework::master_test_suite();
+	auto id = master.get(_name);
+	assert(id != INV_TEST_UNIT_ID);
+	master.remove(id);
+}
+
+int registerTests(
+	boost::unit_test::test_suite& _suite,
+	boost::filesystem::path const& _basepath,
+	boost::filesystem::path const& _path,
+	std::string const& _ipcPath,
+	TestCase::TestCaseCreator _testCaseCreator
+)
+{
+	int numTestsAdded = 0;
+	fs::path fullpath = _basepath / _path;
+	TestCase::Config config{fullpath.string(), _ipcPath, dev::testp0::Options::get().evmVersion()};
+	if (fs::is_directory(fullpath))
+	{
+		test_suite* sub_suite = BOOST_TEST_SUITE(_path.filename().string());
+		for (auto const& entry: boost::iterator_range<fs::directory_iterator>(
+			fs::directory_iterator(fullpath),
+			fs::directory_iterator()
+		))
+			if (fs::is_directory(entry.path()) || TestCase::isTestFilename(entry.path().filename()))
+				numTestsAdded += registerTests(*sub_suite, _basepath, _path / entry.path().filename(), _ipcPath, _testCaseCreator);
+		_suite.add(sub_suite);
+	}
+	else
+	{
+		static vector<unique_ptr<string>> filenames;
+
+		filenames.emplace_back(new string(_path.string()));
+		_suite.add(make_test_case(
+			[config, _testCaseCreator]
+			{
+				BOOST_REQUIRE_NO_THROW({
+					try
+					{
+						stringstream errorStream;
+						auto testCase = _testCaseCreator(config);
+						if (testCase->validateSettings(dev::testp0::Options::get().evmVersion()))
+							switch (testCase->run(errorStream))
+							{
+								case TestCase::TestResult::Success:
+									break;
+								case TestCase::TestResult::Failure:
+									BOOST_ERROR("Test expectation mismatch.\n" + errorStream.str());
+									break;
+								case TestCase::TestResult::FatalError:
+									BOOST_ERROR("Fatal error during test.\n" + errorStream.str());
+									break;
+							}
+					}
+					catch (boost::exception const& _e)
+					{
+						BOOST_ERROR("Exception during extracted test: " << boost::diagnostic_information(_e));
+					}
+			   });
+			},
+			_path.stem().string(),
+			*filenames.back(),
+			0
+		));
+		numTestsAdded = 1;
+	}
+	return numTestsAdded;
+}
 }
 
 test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/[] )
 {
 	master_test_suite_t& master = framework::master_test_suite();
-	master.p_name.value = "SolidityParseTests";
+	master.p_name.value = "SolidityTests";
+	dev::testp0::Options::get().validate();
+
+	// Include the interactive tests in the automatic tests as well
+	for (auto const& ts: g_interactiveTestsuites)
+	{
+		auto const& options = dev::testp0::Options::get();
+
+#ifdef ROCKY_REINSTATED
+		if (ts.smt && options.disableSMT)
+			continue;
+
+		if (ts.ipc && options.disableIPC)
+			continue;
+#endif
+
+		solAssert(registerTests(
+			master,
+			options.testPath / ts.path,
+			ts.subpath,
+			options.ipcPath.string(),
+			ts.testCaseCreator
+		) > 0, std::string("no ") + ts.title + " tests found");
+	}
+
+	if (dev::testp0::Options::get().disableIPC)
+	{
+		for (auto suite: {
+			"ABIDecoderTest",
+			"ABIEncoderTest",
+			"SolidityAuctionRegistrar",
+			"SolidityFixedFeeRegistrar",
+			"SolidityWallet",
+#if HAVE_LLL
+			"LLLERC20",
+			"LLLENS",
+			"LLLEndToEndTest",
+#endif
+			"GasMeterTests",
+			"GasCostTests",
+			"SolidityEndToEndTest",
+			"SolidityOptimizer"
+		})
+			removeTestSuite(suite);
+	}
+
+	if (dev::testp0::Options::get().disableSMT)
+		removeTestSuite("SMTChecker");
+
 	return 0;
 }
 

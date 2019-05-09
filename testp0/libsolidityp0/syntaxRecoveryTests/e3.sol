@@ -6,3 +6,5 @@ contract Error3 {
 	}
 
 }
+// ----
+// ParserError: (95-96): Expected primary expression.
