@@ -86,7 +86,7 @@ int registerTests(
 
 		filenames.emplace_back(new string(_path.string()));
 		_suite.add(make_test_case(
-			[config, _testCaseCreator]
+		  [config, _testCaseCreator]
 			{
 				BOOST_REQUIRE_NO_THROW({
 					try
@@ -94,7 +94,7 @@ int registerTests(
 						stringstream errorStream;
 						auto testCase = _testCaseCreator(config);
 						if (testCase->validateSettings(dev::testp0::Options::get().evmVersion()))
-							switch (testCase->run(errorStream))
+							switch (testCase->run(errorStream, "", false))
 							{
 								case TestCase::TestResult::Success:
 									break;
@@ -133,13 +133,11 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/[] )
 	{
 		auto const& options = dev::testp0::Options::get();
 
-#ifdef ROCKY_REINSTATED
 		if (ts.smt && options.disableSMT)
 			continue;
 
 		if (ts.ipc && options.disableIPC)
 			continue;
-#endif
 
 		solAssert(registerTests(
 			master,

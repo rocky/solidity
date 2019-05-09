@@ -4,7 +4,7 @@ file(GLOB headers "*.h")
 file(GLOB libsolidityp0_sources "libsolidityp0/*.cpp")
 file(GLOB libdevcore_sources "libdevcore/*.cpp")
 file(GLOB libdevcore_headers "libdevcore/*.h")
-file(GLOB liblangutil_sources "liblangutil/*.cpp")
+# file(GLOB liblangutil_sources "liblangutil/*.cpp")
 # file(GLOB liblangutil_headers "liblangutil/*.h")
 
 file(GLOB libsolidity_sources "libsolidityp0/*.cpp")

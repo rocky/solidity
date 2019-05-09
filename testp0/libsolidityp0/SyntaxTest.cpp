@@ -52,7 +52,7 @@ int parseUnsignedInteger(string::iterator& _it, string::iterator _end)
 
 }
 
-SyntaxTest::SyntaxTest(string const& _filename, langutil::EVMVersion _evmVersion): m_evmVersion(_evmVersion)
+SyntaxTest::SyntaxTest(string const& _filename, langutil::EVMVersion _evmVersion, bool _errorRecovery): m_evmVersion(_evmVersion)
 {
 	ifstream file(_filename);
 	if (!file)
@@ -61,6 +61,7 @@ SyntaxTest::SyntaxTest(string const& _filename, langutil::EVMVersion _evmVersion
 
 	m_source = parseSourceAndSettings(file);
 	m_expectations = parseExpectations(file);
+	m_errorRecovery = _errorRecovery;
 }
 
 TestCase::TestResult SyntaxTest::run(ostream& _stream, string const& _linePrefix, bool _formatted)
@@ -69,6 +70,7 @@ TestCase::TestResult SyntaxTest::run(ostream& _stream, string const& _linePrefix
 	compiler().reset();
 	compiler().setSources({{"", versionPragma + m_source}});
 	compiler().setEVMVersion(m_evmVersion);
+	compiler().setParserErrorRecovery(m_errorRecovery);
 
 #ifdef ROCKY_REINSTATED
 	if (compiler().parse())

@@ -22,3 +22,8 @@ contract Error4 {
 }
 // ----
 // ParserError: (248-249): Expected ';' but got 'Number'
+// ParserError: (470-478): Expected ';' but got identifier
+// ParserError: (528-532): Expected ';' but got 'emit'
+// ParserError: (576-582): Expected ',' but got 'return'
+// ParserError: (576-582): Expected primary expression.
+// Warning: (587-588): Recovered in <Statement> at ';'.

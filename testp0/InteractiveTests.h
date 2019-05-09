@@ -44,8 +44,8 @@ struct Testsuite
 /// Array of testsuits that can be run interactively as well as automatically
 Testsuite const g_interactiveTestsuites[] = {
 /*
-	Title                  Path            Subpath                SMT    IPC    Creator function */
-	{"Syntax",              "libsolidityp0", "syntaxRecoveryTests",         false, false, &SyntaxTest::create},
+	Title                  Path              Subpath                SMT    IPC    Creator function */
+	{"SyntaxRecovery",     "libsolidityp0", "syntaxRecoveryTests",  false, false, &SyntaxTest::createErrorRecovery},
 };
 
 }

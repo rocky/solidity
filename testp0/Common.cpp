@@ -43,7 +43,7 @@ boost::filesystem::path testPath()
 	auto const searchPath =
 	{
 		fs::current_path() / ".." / "testp0",
-		fs::current_path() / ".." / ".." / "test00",
+		fs::current_path() / ".." / ".." / "testp0",
 		fs::current_path() / "testp0",
 		fs::current_path() / ".." / ".." / ".." / "testp0",
 		fs::current_path()
