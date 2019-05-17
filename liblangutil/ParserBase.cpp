@@ -57,7 +57,7 @@ Token ParserBase::advance()
 	return m_scanner->next();
 }
 
-std::string ParserBase::tokenName(Token _token)
+string ParserBase::tokenName(Token _token)
 {
 	if (_token == Token::Identifier)
 		return "identifier";
@@ -79,11 +79,11 @@ void ParserBase::expectToken(Token _value, bool _advance)
 	Token tok = m_scanner->currentToken();
 	if (tok != _value)
 	{
-		std::string const expectToken = ParserBase::tokenName(_value);
+		string const expectedToken = ParserBase::tokenName(_value);
 		if (m_parserErrorRecovery)
-			parserError("Expected " + expectToken + " but got " + tokenName(tok));
+			parserError("Expected " + expectedToken + " but got " + tokenName(tok));
 		else
-			fatalParserError("Expected " + expectToken + " but got " + tokenName(tok));
+			fatalParserError("Expected " + expectedToken + " but got " + tokenName(tok));
 		// Do not advance so that recovery can sync or make use of the current token. This is especially useful if the expected token
 		// is the only one that is missing and is at the end of a construct.
 		// "{ ... ; }" is such an example.
@@ -94,7 +94,7 @@ void ParserBase::expectToken(Token _value, bool _advance)
 		m_scanner->next();
 }
 
-void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool _advance)
+void ParserBase::expectTokenOrConsumeUntil(Token _value, char const* _currentNode, bool _advance)
 {
 	Token tok = m_scanner->currentToken();
 	if (tok != _value)
@@ -105,18 +105,18 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool 
 		while (token != _value && token != Token::EOS)
 			token = m_scanner->next();
 		std::string const expectToken = ParserBase::tokenName(_value);
-		std::string const mess = "In <" + string(_lhs) + ">, " + expectToken + "is expected; got " +  ParserBase::tokenName(tok) +  "instead.";
+		std::string const mess = "In " + string(_currentNode) + ", " + expectToken + "is expected; got " +  ParserBase::tokenName(tok) +  "instead.";
 		if (token == Token::EOS)
 		{
 			// rollback to where the token started, and raise exception to be caught at a higher level.
-			m_scanner->seek(startPosition);
+			m_scanner->setPosition(startPosition);
 			m_inParserRecovery = true;
 			fatalParserError(errorLoc, mess);
 		}
 		else
 		{
 			if (m_inParserRecovery)
-				parserWarning("Recovered in <" + string(_lhs) + "> at " + expectToken + ".");
+				parserWarning("Recovered in " + string(_currentNode) + " at " + expectToken + ".");
 			else
 				parserError(errorLoc, mess + "Recovered at next " + expectToken);
 			m_inParserRecovery = false;
@@ -126,7 +126,7 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool 
 		if (m_inParserRecovery)
 		{
 			std::string expectToken = ParserBase::tokenName(_value);
-			parserWarning("Recovered in <" + string(_lhs) + "> at " + expectToken + ".");
+			parserWarning("Recovered in " + string(_currentNode) + " at " + expectToken + ".");
 			m_inParserRecovery = false;
 		}
 

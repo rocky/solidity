@@ -120,8 +120,10 @@ public:
 		return m_errorCount > 0;
 	}
 
+	// See if the maximum @a _type  limit has reen reached reached.
+	// If @a _advance is true, then alos increase the count for that type.
 	// @returns true if error shouldn't be stored
-	bool checkForExcessiveErrors(Error::Type _type);
+	bool checkForExcessiveErrors(Error::Type _type, bool _advance = true);
 
 private:
 	void error(

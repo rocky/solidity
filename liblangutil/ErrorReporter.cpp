@@ -86,11 +86,11 @@ void ErrorReporter::error(Error::Type _type, SourceLocation const& _location, Se
 	m_errorList.push_back(err);
 }
 
-bool ErrorReporter::checkForExcessiveErrors(Error::Type _type)
+bool ErrorReporter::checkForExcessiveErrors(Error::Type _type, bool _advance)
 {
 	if (_type == Error::Type::Warning)
 	{
-		m_warningCount++;
+		if (_advance) m_warningCount++;
 
 		if (m_warningCount == c_maxWarningsAllowed)
 		{
@@ -104,7 +104,7 @@ bool ErrorReporter::checkForExcessiveErrors(Error::Type _type)
 	}
 	else
 	{
-		m_errorCount++;
+		if (_advance) m_errorCount++;
 
 		if (m_errorCount > c_maxErrorsAllowed)
 		{

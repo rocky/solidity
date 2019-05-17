@@ -111,7 +111,7 @@ public:
 	Token next();
 
 	/// Set scanner to a specific offset. This is used in error recovery.
-	void seek(size_t _offset);
+	void setPosition(size_t _offset);
 
 	///@{
 	///@name Information about the current token

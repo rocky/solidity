@@ -156,9 +156,9 @@ void Scanner::reset()
 	next();
 }
 
-void Scanner::seek(size_t _offset)
+void Scanner::setPosition(size_t _offset)
 {
-	m_char = m_source->seek(_offset);
+	m_char = m_source->setPosition(_offset);
 	scanToken();
 	next();
 }

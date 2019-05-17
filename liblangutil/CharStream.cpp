@@ -73,9 +73,10 @@ char CharStream::rollback(size_t _amount)
 	return get();
 }
 
-char CharStream::seek(size_t _location)
+char CharStream::setPosition(size_t _location)
 {
-	m_position = _location;
+	if (_location <= m_source.size())
+		m_position = _location;
 	return get();
 }
 

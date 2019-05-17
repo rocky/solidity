@@ -26,4 +26,4 @@ contract Error4 {
 // ParserError: (528-532): Expected ';' but got 'emit'
 // ParserError: (576-582): Expected ',' but got 'return'
 // ParserError: (576-582): Expected primary expression.
-// Warning: (587-588): Recovered in <Statement> at ';'.
+// Warning: (587-588): Recovered in Statement at ';'.

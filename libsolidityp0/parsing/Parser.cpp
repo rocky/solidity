@@ -30,14 +30,6 @@
 #include <cctype>
 #include <vector>
 
-#define parserCatch \
-	if (!m_errorReporter.hasErrors() || \
-		(!m_parserErrorRecovery) ||		\
-		m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError)) \
-		BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */ \
-	m_inParserRecovery = true;
-
-
 using namespace std;
 using namespace langutil;
 
@@ -320,7 +312,11 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 	}
 	catch (FatalError const&)
 	{
-		parserCatch;
+		if (!m_errorReporter.hasErrors() ||
+		(!m_parserErrorRecovery) ||
+			m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError, false))
+			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
+		m_inParserRecovery = true;
 	}
 	nodeFactory.markEndPosition();
 	if (m_inParserRecovery)
@@ -985,7 +981,11 @@ ASTPointer<Block> Parser::parseBlock(ASTPointer<ASTString> const& _docString)
 	}
 	catch (FatalError const&)
 	{
-		parserCatch;
+		if (!m_errorReporter.hasErrors() ||
+		(!m_parserErrorRecovery) ||
+			m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError, false))
+			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
+		m_inParserRecovery = true;
 	}
 	expectTokenOrConsumeUntil(Token::RBrace, "Block");
 	return nodeFactory.createNode<Block>(_docString, statements);
@@ -1062,7 +1062,11 @@ ASTPointer<Statement> Parser::parseStatement()
 	}
 	catch (FatalError const&)
 	{
-		parserCatch;
+		if (!m_errorReporter.hasErrors() ||
+		(!m_parserErrorRecovery) ||
+			m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError, false))
+			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
+		m_inParserRecovery = true;
 	}
 	if (m_inParserRecovery)
 		expectTokenOrConsumeUntil(Token::Semicolon, "Statement");

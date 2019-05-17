@@ -36,9 +36,10 @@ class Scanner;
 class ParserBase
 {
 public:
-	/// Set @_parserErrorRecover to true  for additional Steve-Johnson-style error recovery.
-	/// This is experimental and intended for use in side IDE's and front-ends that
-	/// can use additional information and partial AST information even when errors occur.
+	/// Set @_parserErrorRecover to true for additional error
+	/// recovery.  This is experimental and intended for use
+	/// front-end tools that need partial AST information even
+	/// when errors occur.
 	explicit ParserBase(ErrorReporter& errorReporter, bool _parserErrorRecovery = false): m_errorReporter(errorReporter)
 	{
 		m_parserErrorRecovery = _parserErrorRecovery;
@@ -68,14 +69,14 @@ protected:
 
 	///@{
 	///@name Helper functions
-	/// If current token value is not _value, throw exception otherwise advance token
-	//  if _advance is true.
+	/// If current token value is not @a _value, throw exception otherwise advance token
+	//  @a if _advance is true and error recovery is in effect.
 	void expectToken(Token _value, bool _advance = true);
 
-	/// Like expectToken but if there is an error we will delete tokens until
-	/// we get the expected token or EOS. If we hit EOS we back up to the error point,
+	/// Like expectToken but if there is an error ignores tokens until
+	/// the expected token or EOS is seen. If EOS is encountered, back up to the error point,
 	/// and throw an exception so that a higher grammar rule has an opportunity to recover.
-	void expectTokenOrConsumeUntil(Token _value, char const *_lhs, bool _advance = true);
+	void expectTokenOrConsumeUntil(Token _value, char const *_currentNode, bool _advance = true);
 	Token currentToken() const;
 	Token peekNextToken() const;
 	std::string tokenName(Token _token);
