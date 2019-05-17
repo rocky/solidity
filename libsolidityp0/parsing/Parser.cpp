@@ -308,7 +308,6 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 			else
 				fatalParserError(string("Function, variable, struct or modifier declaration expected."));
 		}
-		nodeFactory.markEndPosition();
 	}
 	catch (FatalError const&)
 	{
