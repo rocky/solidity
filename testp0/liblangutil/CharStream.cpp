@@ -22,7 +22,7 @@
 
 #include <liblangutil/CharStream.h>
 
-#include <test/Options.h>
+#include <testp0/Options.h>
 
 namespace langutil
 {

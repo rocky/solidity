@@ -50,7 +50,7 @@ boost::filesystem::path testPath()
 	};
 	for (auto const& basePath: searchPath)
 	{
-		fs::path syntaxTestPath = basePath / "libsolidityp0" / "syntaxRecoveryTests";
+		fs::path syntaxTestPath = basePath / "libsolidityp0" / "errorRecoveryTests";
 		if (fs::exists(syntaxTestPath) && fs::is_directory(syntaxTestPath))
 			return basePath;
 	}
