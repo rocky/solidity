@@ -22,4 +22,4 @@ if (NOT Boost_USE_STATIC_LIBS)
     target_compile_definitions(solptest PUBLIC -DBOOST_TEST_DYN_LINK)
 endif()
 
-# add_subdirectory(tools)
+add_subdirectory(tools)
