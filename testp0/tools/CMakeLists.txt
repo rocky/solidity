@@ -12,4 +12,7 @@ target_link_libraries(isolptest PRIVATE solidityp0 ${Boost_PROGRAM_OPTIONS_LIBRA
 
 if (NOT Boost_USE_STATIC_LIBS)
     target_compile_definitions(isolptest PUBLIC -DBOOST_TEST_DYN_LINK)
-endif()
+  endif()
+
+add_executable(tokens tokens.cpp)
+target_link_libraries(tokens PRIVATE langutil)
