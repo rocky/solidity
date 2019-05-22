@@ -137,10 +137,11 @@ public:
 	void setOptimiserSettings(OptimiserSettings _settings);
 #endif
 
-	/// Set the whether or not parser error is desired.
+	/// Set whether or not parser error is desired.
 	/// When called without an argument it will revert to the default.
 	/// Must be set before parsing.
-	void setParserErrorRecovery(bool _wantErrorRecovery = false) {
+	void setParserErrorRecovery(bool _wantErrorRecovery = false)
+	{
 		m_parserErrorRecovery = _wantErrorRecovery;
 	}
 

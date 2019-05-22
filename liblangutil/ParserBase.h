@@ -93,7 +93,6 @@ protected:
 	void parserError(std::string const& _description);
 	void parserError(SourceLocation const& _location, std::string const& _description);
 
-
 	/// Creates a @ref ParserWarning and annotates it with the current position and the
 	/// given @a _description.
 	void parserWarning(std::string const& _description);

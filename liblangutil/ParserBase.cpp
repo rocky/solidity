@@ -99,11 +99,10 @@ void ParserBase::expectTokenOrConsumeUntil(Token _value, char const* _currentNod
 	Token tok = m_scanner->currentToken();
 	if (tok != _value)
 	{
-		Token token = m_scanner->currentToken();
 		int startPosition = position();
 		SourceLocation errorLoc = SourceLocation{startPosition, endPosition(), source()};
-		while (token != _value && token != Token::EOS)
-			token = m_scanner->next();
+		Token token;
+		for (token=tok; token != _value && token != Token::EOS; token = m_scanner->next()) ;
 		std::string const expectToken = ParserBase::tokenName(_value);
 		std::string const mess = "In " + string(_currentNode) + ", " + expectToken + "is expected; got " +  ParserBase::tokenName(tok) +  "instead.";
 		if (token == Token::EOS)
@@ -159,12 +158,12 @@ void ParserBase::parserError(SourceLocation const& _location, string const& _des
 
 void ParserBase::parserError(string const& _description)
 {
-	m_errorReporter.parserError(SourceLocation{position(), endPosition(), source()}, _description);
+	parserError(SourceLocation{position(), endPosition(), source()}, _description);
 }
 
 void ParserBase::fatalParserError(string const& _description)
 {
-	m_errorReporter.fatalParserError(SourceLocation{position(), endPosition(), source()}, _description);
+	fatalParserError(SourceLocation{position(), endPosition(), source()}, _description);
 }
 
 void ParserBase::fatalParserError(SourceLocation const& _location, string const& _description)

@@ -311,8 +311,9 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 	}
 	catch (FatalError const&)
 	{
-		if (!m_errorReporter.hasErrors() ||
-		(!m_parserErrorRecovery) ||
+		if (
+			!m_errorReporter.hasErrors() ||
+			(!m_parserErrorRecovery) ||
 			m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError, false))
 			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
 		m_inParserRecovery = true;
