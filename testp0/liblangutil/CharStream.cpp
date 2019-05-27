@@ -17,10 +17,11 @@
 /**
  * @author Rocky Bernstein <rocky.bernstein@consensys.net>
  * @date 2016
- * Unit tests for the CharStreap class.
+ * Unit tests for the CharStream class.
  */
 
 #include <liblangutil/CharStream.h>
+#include <liblangutil/Exceptions.h>
 
 #include <testp0/Options.h>
 
@@ -40,9 +41,8 @@ BOOST_AUTO_TEST_CASE(test_fail)
 	BOOST_CHECK('o' == source->advanceAndGet());
 	BOOST_CHECK('n' == source->rollback(1));
 	BOOST_CHECK('w' == source->setPosition(2));
-	BOOST_CHECK('w' == source->setPosition(200));
-	source->reset();
-	BOOST_CHECK('n' == source->get());
+	BOOST_REQUIRE_THROW(source->setPosition(200),
+			    ::langutil::InternalCompilerError);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

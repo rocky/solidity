@@ -75,8 +75,8 @@ char CharStream::rollback(size_t _amount)
 
 char CharStream::setPosition(size_t _location)
 {
-	if (_location <= m_source.size())
-		m_position = _location;
+	solAssert(_location <= m_source.size(), "Attemping to set position past end of source.");
+	m_position = _location;
 	return get();
 }
 
