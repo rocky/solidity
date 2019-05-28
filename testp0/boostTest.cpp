@@ -86,7 +86,7 @@ int registerTests(
 
 		filenames.emplace_back(new string(_path.string()));
 		_suite.add(make_test_case(
-		  [config, _testCaseCreator]
+		[config, _testCaseCreator]
 			{
 				BOOST_REQUIRE_NO_THROW({
 					try
@@ -110,7 +110,7 @@ int registerTests(
 					{
 						BOOST_ERROR("Exception during extracted test: " << boost::diagnostic_information(_e));
 					}
-			   });
+				});
 			},
 			_path.stem().string(),
 			*filenames.back(),

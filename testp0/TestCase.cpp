@@ -48,7 +48,7 @@ bool TestCase::isTestFilename(boost::filesystem::path const& _filename)
 {
 	string extension = _filename.extension().string();
 	return (extension == ".sol" || extension == ".yul") &&
-		   !boost::starts_with(_filename.string(), "~") &&
+			!boost::starts_with(_filename.string(), "~") &&
 			!boost::starts_with(_filename.string(), ".");
 }
 
@@ -66,6 +66,7 @@ string TestCase::parseSourceAndSettings(istream& _stream)
 {
 	string source;
 	string line;
+	static string const comment("// ");
 	static string const settingsDelimiter("// ====");
 	static string const delimiter("// ----");
 	bool sourcePart = true;
@@ -77,12 +78,12 @@ string TestCase::parseSourceAndSettings(istream& _stream)
 			sourcePart = false;
 		else if (sourcePart)
 			source += line + "\n";
-		else if (boost::algorithm::starts_with(line, "// "))
+		else if (boost::algorithm::starts_with(line, comment))
 		{
 			size_t colon = line.find(':');
 			if (colon == string::npos)
 				throw runtime_error(string("Expected \":\" inside setting."));
-			string key = line.substr(3, colon - 3);
+			string key = line.substr(comment.size(), colon - comment.size());
 			string value = line.substr(colon + 1);
 			boost::algorithm::trim(key);
 			boost::algorithm::trim(value);

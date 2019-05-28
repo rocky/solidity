@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(test_fail)
 	BOOST_CHECK('n' == source->rollback(1));
 	BOOST_CHECK('w' == source->setPosition(2));
 	BOOST_REQUIRE_THROW(source->setPosition(200),
-			    ::langutil::InternalCompilerError);
+						::langutil::InternalCompilerError);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

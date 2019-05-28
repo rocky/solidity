@@ -284,7 +284,7 @@ boost::optional<Json::Value> checkAuxiliaryInputKeys(Json::Value const& _input)
 
 boost::optional<Json::Value> checkSettingsKeys(Json::Value const& _input)
 {
-	static set<string> keys{"evmVersion", "libraries", "metadata", "optimizer", "outputSelection", "remappings"};
+	static set<string> keys{"errorRecovery", "evmVersion", "libraries", "metadata", "optimizer", "outputSelection", "remappings"};
 	return checkKeys(_input, keys, "settings");
 }
 
@@ -445,7 +445,12 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 	if (sources.empty())
 		return formatFatalError("JSONError", "No input sources specified.");
 
-	ret.errors = Json::arrayValue;
+	Json::Value const& errorRecovery = _input["errorRecovery"];
+
+	if (!_errorRecovery.isBool())
+		return formatFatalError("JSONError", "\"settings.errorRecovery\" must be Boolean");
+
+	ret.errorRecovery = errorRecovery.asBool();
 
 	for (auto const& sourceName: sources.getMemberNames())
 	{
@@ -658,6 +663,7 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 	for (auto const& smtLib2Response: _inputsAndSettings.smtLib2Responses)
 		compilerStack.addSMTLib2Response(smtLib2Response.first, smtLib2Response.second);
 	compilerStack.setEVMVersion(_inputsAndSettings.evmVersion);
+	compilerStack.setParserErrorRecovery(_inputsAndSettings.errorRecovery);
 	compilerStack.setRemappings(_inputsAndSettings.remappings);
 	compilerStack.setOptimiserSettings(std::move(_inputsAndSettings.optimiserSettings));
 	compilerStack.setLibraries(_inputsAndSettings.libraries);

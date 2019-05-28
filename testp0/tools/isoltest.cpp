@@ -439,7 +439,7 @@ int main(int argc, char const *argv[])
 
 	cout << endl << "Summary: ";
 	AnsiColorized(cout, !options.noColor, {BOLD, global_stats ? GREEN : RED}) <<
-		 global_stats.successCount << "/" << global_stats.testCount;
+					global_stats.successCount << "/" << global_stats.testCount;
 	cout << " tests successful";
 	if (global_stats.skippedCount > 0)
 	{
