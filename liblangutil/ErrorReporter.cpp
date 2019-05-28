@@ -86,7 +86,7 @@ void ErrorReporter::error(Error::Type _type, SourceLocation const& _location, Se
 	m_errorList.push_back(err);
 }
 
-bool ErrorReporter::excessiveErrors(Error::Type _type)
+bool ErrorReporter::hasExcessiveErrors(Error::Type _type)
 {
 	if (_type == Error::Type::Warning)
 	{

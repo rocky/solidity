@@ -122,7 +122,7 @@ public:
 
 	// See if the maximum @a _type  limit has reen reached reached.
 	// @returns true if error there are too many errors.
-	bool excessiveErrors(Error::Type _type);
+	bool hasExcessiveErrors(Error::Type _type);
 
 private:
 	void error(

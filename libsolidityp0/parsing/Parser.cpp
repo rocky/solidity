@@ -70,7 +70,7 @@ private:
 	SourceLocation m_location;
 };
 
-	ASTPointer<SourceUnit> Parser::parse(shared_ptr<Scanner> const& _scanner)
+ASTPointer<SourceUnit> Parser::parse(shared_ptr<Scanner> const& _scanner)
 {
 	try
 	{
@@ -314,7 +314,7 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 		if (
 			!m_errorReporter.hasErrors() ||
 			(!m_parserErrorRecovery) ||
-			m_errorReporter.excessiveErrors(Error::Type::ParserError))
+			m_errorReporter.hasExcessiveErrors(Error::Type::ParserError))
 			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
 		m_inParserRecovery = true;
 	}
@@ -983,7 +983,7 @@ ASTPointer<Block> Parser::parseBlock(ASTPointer<ASTString> const& _docString)
 	{
 		if (!m_errorReporter.hasErrors() ||
 		(!m_parserErrorRecovery) ||
-			m_errorReporter.excessiveErrors(Error::Type::ParserError))
+			m_errorReporter.hasExcessiveErrors(Error::Type::ParserError))
 			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
 		m_inParserRecovery = true;
 	}
@@ -1064,7 +1064,7 @@ ASTPointer<Statement> Parser::parseStatement()
 	{
 		if (!m_errorReporter.hasErrors() ||
 			(!m_parserErrorRecovery) ||
-			m_errorReporter.excessiveErrors(Error::Type::ParserError))
+			m_errorReporter.hasExcessiveErrors(Error::Type::ParserError))
 			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
 		m_inParserRecovery = true;
 	}
