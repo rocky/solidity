@@ -179,7 +179,6 @@ public:
 	/// @returns false on error.
 	bool parse();
 
-#ifdef ROCKY_REINSTATED
 	/// Performs the analysis steps (imports, scopesetting, syntaxCheck, referenceResolving,
 	///  typechecking, staticAnalysis) on previously parsed sources.
 	/// @returns false on error.
@@ -187,9 +186,7 @@ public:
 
 	/// Parses and analyzes all source units that were added
 	/// @returns false on error.
-#endif
-
-	bool parseAndAnalyze();
+	bool parseAndAnalyze(bool astOnly = false);
 
 	/// Compiles the source units that were previously added and parsed.
 	/// @returns false on error.

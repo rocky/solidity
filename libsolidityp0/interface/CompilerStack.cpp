@@ -25,18 +25,20 @@
 #include <libsolidityp0/interface/CompilerStack.h>
 #include <liblangutil/SemVerHandler.h>
 
+#include <libsolidityp0/analysis/ControlFlowAnalyzer.h>
+#include <libsolidityp0/analysis/ControlFlowGraph.h>
+#include <libsolidityp0/analysis/ContractLevelChecker.h>
+#include <libsolidityp0/analysis/DocStringAnalyser.h>
+#include <libsolidityp0/analysis/GlobalContext.h>
 #ifdef ROCKY_REINSTATED
-#include <libsolidityparse/analysis/ControlFlowAnalyzer.h>
-#include <libsolidityparse/analysis/ControlFlowGraph.h>
-#include <libsolidityparse/analysis/ContractLevelChecker.h>
-#include <libsolidityparse/analysis/DocStringAnalyser.h>
-#include <libsolidityparse/analysis/GlobalContext.h>
-#include <libsolidityparse/analysis/NameAndTypeResolver.h>
-#include <libsolidityparse/analysis/PostTypeChecker.h>
-#include <libsolidityparse/analysis/StaticAnalyzer.h>
-#include <libsolidityparse/analysis/SyntaxChecker.h>
-#include <libsolidityparse/analysis/TypeChecker.h>
-#include <libsolidityparse/analysis/ViewPureChecker.h>
+#include <libsolidityp0/analysis/NameAndTypeResolver.h>
+#endif
+#include <libsolidityp0/analysis/PostTypeChecker.h>
+#include <libsolidityp0/analysis/StaticAnalyzer.h>
+#include <libsolidityp0/analysis/SyntaxChecker.h>
+#include <libsolidityp0/analysis/TypeChecker.h>
+#ifdef ROCKY_REINSTATED
+#include <libsolidity/analysis/ViewPureChecker.h>
 #endif
 
 #include <libsolidityp0/ast/AST.h>
@@ -142,7 +144,6 @@ void CompilerStack::setLibraries(std::map<std::string, h160> const& _libraries)
 void CompilerStack::setOptimiserSettings(bool _optimize, unsigned _runs)
 {
 #ifdef ROCKY_REINSTATED
-
 	OptimiserSettings settings = _optimize ? OptimiserSettings::standard() : OptimiserSettings::minimal();
 	settings.expectedExecutionsPerDeployment = _runs;
 	setOptimiserSettings(std::move(settings));
@@ -261,10 +262,10 @@ bool CompilerStack::parse()
 		return false;
 }
 
-#ifdef ROCKY_REINSTATED
 bool CompilerStack::analyze()
 {
-	if (m_stackState != ParsingSuccessful || m_stackState >= AnalysisSuccessful)
+	if ( (m_stackState != ParsingSuccessful && !m_parserErrorRecovery)
+		|| m_stackState >= AnalysisSuccessful )
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Must call analyze only after parsing was successful."));
 	resolveImports();
 
@@ -281,6 +282,7 @@ bool CompilerStack::analyze()
 			if (!docStringAnalyser.analyseDocStrings(*source->ast))
 				noErrors = false;
 
+#ifdef ROCKY_REINSTATED
 		m_globalContext = make_shared<GlobalContext>();
 		NameAndTypeResolver resolver(*m_globalContext, m_scopes, m_errorReporter);
 		for (Source const* source: m_sourceOrder)
@@ -290,6 +292,7 @@ bool CompilerStack::analyze()
 		map<string, SourceUnit const*> sourceUnitsByName;
 		for (auto& source: m_sources)
 			sourceUnitsByName[source.first] = source.second.ast.get();
+
 		for (Source const* source: m_sourceOrder)
 			if (!resolver.performImports(*source->ast, sourceUnitsByName))
 				return false;
@@ -389,10 +392,11 @@ bool CompilerStack::analyze()
 				smtChecker.analyze(*source->ast, source->scanner);
 			m_unhandledSMTLib2Queries += smtChecker.unhandledQueries();
 		}
+#endif
 	}
 	catch(FatalError const&)
 	{
-		if (m_errorReporter.errors().empty())
+		if (!m_errorReporter.hasErrors())
 			throw; // Something is weird here, rather throw again.
 		noErrors = false;
 	}
@@ -406,15 +410,9 @@ bool CompilerStack::analyze()
 		return false;
 }
 
-#endif
-
-bool CompilerStack::parseAndAnalyze()
+bool CompilerStack::parseAndAnalyze(bool astOnly)
 {
-#ifdef ROCKY_REINSTATED
-	return parse() && analyze();
-#else
-	return parse();
-#endif
+	return (parse() || astOnly) && analyze();
 }
 
 bool CompilerStack::isRequestedContract(ContractDefinition const& _contract) const
@@ -429,7 +427,7 @@ bool CompilerStack::isRequestedContract(ContractDefinition const& _contract) con
 bool CompilerStack::compile()
 {
 	if (m_stackState < AnalysisSuccessful)
-		if (!parseAndAnalyze())
+		if (!parseAndAnalyze(m_parserErrorRecovery))
 			return false;
 
 #ifdef ROCKY_REINSTATED
@@ -875,7 +873,7 @@ string CompilerStack::applyRemapping(string const& _path, string const& _context
 
 void CompilerStack::resolveImports()
 {
-	solAssert(m_stackState == ParsingSuccessful, "");
+	if (!m_parserErrorRecovery) solAssert(m_stackState == ParsingSuccessful, "");
 
 	// topological sorting (depth first search) of the import graph, cutting potential cycles
 	vector<Source const*> sourceOrder;

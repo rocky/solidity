@@ -381,17 +381,17 @@ void ArrayTypeName::accept(ASTConstVisitor& _visitor) const
 	_visitor.endVisit(*this);
 }
 
-void InlineAssembly::accept(ASTVisitor& _visitor)
-{
-	_visitor.visit(*this);
-	_visitor.endVisit(*this);
-}
+/* void InlineAssembly::accept(ASTVisitor& _visitor) */
+/* { */
+/* 	_visitor.visit(*this); */
+/* 	_visitor.endVisit(*this); */
+/* } */
 
-void InlineAssembly::accept(ASTConstVisitor& _visitor) const
-{
-	_visitor.visit(*this);
-	_visitor.endVisit(*this);
-}
+/* void InlineAssembly::accept(ASTConstVisitor& _visitor) const */
+/* { */
+/* 	_visitor.visit(*this); */
+/* 	_visitor.endVisit(*this); */
+/* } */
 
 void Block::accept(ASTVisitor& _visitor)
 {

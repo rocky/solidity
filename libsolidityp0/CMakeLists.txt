@@ -1,4 +1,28 @@
 set(sources
+	analysis/ConstantEvaluator.cpp
+	analysis/ConstantEvaluator.h
+	analysis/ContractLevelChecker.cpp
+	analysis/ContractLevelChecker.h
+	analysis/ControlFlowAnalyzer.cpp
+	analysis/ControlFlowAnalyzer.h
+	analysis/ControlFlowBuilder.cpp
+	analysis/ControlFlowBuilder.h
+	analysis/ControlFlowGraph.cpp
+	analysis/ControlFlowGraph.h
+	analysis/DeclarationContainer.cpp
+	analysis/DeclarationContainer.h
+	analysis/DocStringAnalyser.cpp
+	analysis/DocStringAnalyser.h
+	analysis/GlobalContext.cpp
+	analysis/GlobalContext.h
+	analysis/PostTypeChecker.cpp
+	analysis/PostTypeChecker.h
+	analysis/StaticAnalyzer.cpp
+	analysis/StaticAnalyzer.h
+	analysis/SyntaxChecker.cpp
+	analysis/SyntaxChecker.h
+	analysis/TypeChecker.cpp
+	analysis/TypeChecker.h
 	ast/AST.cpp
 	ast/AST.h
 	ast/AST_accept.h

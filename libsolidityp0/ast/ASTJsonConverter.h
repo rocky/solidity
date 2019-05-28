@@ -87,7 +87,7 @@ public:
 	bool visit(FunctionTypeName const& _node) override;
 	bool visit(Mapping const& _node) override;
 	bool visit(ArrayTypeName const& _node) override;
-	bool visit(InlineAssembly const& _node) override;
+	// bool visit(InlineAssembly const& _node) override;
 	bool visit(Block const& _node) override;
 	bool visit(PlaceholderStatement const& _node) override;
 	bool visit(IfStatement const& _node) override;

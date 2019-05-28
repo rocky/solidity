@@ -64,7 +64,7 @@ public:
 	virtual bool visit(FunctionTypeName& _node) { return visitNode(_node); }
 	virtual bool visit(Mapping& _node) { return visitNode(_node); }
 	virtual bool visit(ArrayTypeName& _node) { return visitNode(_node); }
-	virtual bool visit(InlineAssembly& _node) { return visitNode(_node); }
+	// virtual bool visit(InlineAssembly& _node) { return visitNode(_node); }
 	virtual bool visit(Block& _node) { return visitNode(_node); }
 	virtual bool visit(PlaceholderStatement& _node) { return visitNode(_node); }
 	virtual bool visit(IfStatement& _node) { return visitNode(_node); }
@@ -175,7 +175,7 @@ public:
 	virtual bool visit(WhileStatement const& _node) { return visitNode(_node); }
 	virtual bool visit(ForStatement const& _node) { return visitNode(_node); }
 	virtual bool visit(Continue const& _node) { return visitNode(_node); }
-	virtual bool visit(InlineAssembly const& _node) { return visitNode(_node); }
+	// virtual bool visit(InlineAssembly const& _node) { return visitNode(_node); }
 	virtual bool visit(Break const& _node) { return visitNode(_node); }
 	virtual bool visit(Return const& _node) { return visitNode(_node); }
 	virtual bool visit(Throw const& _node) { return visitNode(_node); }

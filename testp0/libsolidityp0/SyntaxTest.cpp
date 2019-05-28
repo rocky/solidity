@@ -72,12 +72,8 @@ TestCase::TestResult SyntaxTest::run(ostream& _stream, string const& _linePrefix
 	compiler().setEVMVersion(m_evmVersion);
 	compiler().setParserErrorRecovery(m_errorRecovery);
 
-#ifdef ROCKY_REINSTATED
-	if (compiler().parse())
-		compiler().analyze();
-#else
 	compiler().parse();
-#endif
+	compiler().analyze();
 
 	for (auto const& currentError: filterErrors(compiler().errors(), true))
 	{
