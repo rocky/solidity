@@ -86,11 +86,39 @@ void ErrorReporter::error(Error::Type _type, SourceLocation const& _location, Se
 	m_errorList.push_back(err);
 }
 
-bool ErrorReporter::checkForExcessiveErrors(Error::Type _type, bool _advance)
+bool ErrorReporter::excessiveErrors(Error::Type _type)
 {
 	if (_type == Error::Type::Warning)
 	{
-		if (_advance) m_warningCount++;
+		if (m_warningCount == c_maxWarningsAllowed)
+		{
+			auto err = make_shared<Error>(Error::Type::Warning);
+			*err << errinfo_comment("There are more than 256 warnings. Ignoring the rest.");
+			m_errorList.push_back(err);
+		}
+
+		if (m_warningCount >= c_maxWarningsAllowed)
+			return true;
+	}
+	else
+	{
+		if (m_errorCount > c_maxErrorsAllowed)
+		{
+			auto err = make_shared<Error>(Error::Type::Warning);
+			*err << errinfo_comment("There are more than 256 errors. Aborting.");
+			m_errorList.push_back(err);
+			BOOST_THROW_EXCEPTION(FatalError());
+		}
+	}
+
+	return false;
+}
+
+bool ErrorReporter::checkForExcessiveErrors(Error::Type _type)
+{
+	if (_type == Error::Type::Warning)
+	{
+		m_warningCount++;
 
 		if (m_warningCount == c_maxWarningsAllowed)
 		{
@@ -104,7 +132,7 @@ bool ErrorReporter::checkForExcessiveErrors(Error::Type _type, bool _advance)
 	}
 	else
 	{
-		if (_advance) m_errorCount++;
+		m_errorCount++;
 
 		if (m_errorCount > c_maxErrorsAllowed)
 		{

@@ -314,7 +314,7 @@ ASTPointer<ContractDefinition> Parser::parseContractDefinition()
 		if (
 			!m_errorReporter.hasErrors() ||
 			(!m_parserErrorRecovery) ||
-			m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError, false))
+			m_errorReporter.excessiveErrors(Error::Type::ParserError))
 			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
 		m_inParserRecovery = true;
 	}
@@ -983,7 +983,7 @@ ASTPointer<Block> Parser::parseBlock(ASTPointer<ASTString> const& _docString)
 	{
 		if (!m_errorReporter.hasErrors() ||
 		(!m_parserErrorRecovery) ||
-			m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError, false))
+			m_errorReporter.excessiveErrors(Error::Type::ParserError))
 			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
 		m_inParserRecovery = true;
 	}
@@ -1063,8 +1063,8 @@ ASTPointer<Statement> Parser::parseStatement()
 	catch (FatalError const&)
 	{
 		if (!m_errorReporter.hasErrors() ||
-		(!m_parserErrorRecovery) ||
-			m_errorReporter.checkForExcessiveErrors(Error::Type::ParserError, false))
+			(!m_parserErrorRecovery) ||
+			m_errorReporter.excessiveErrors(Error::Type::ParserError))
 			BOOST_THROW_EXCEPTION(FatalError()); /* Don't try to recover here. */
 		m_inParserRecovery = true;
 	}

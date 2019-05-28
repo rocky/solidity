@@ -121,9 +121,8 @@ public:
 	}
 
 	// See if the maximum @a _type  limit has reen reached reached.
-	// If @a _advance is true, then alos increase the count for that type.
-	// @returns true if error shouldn't be stored
-	bool checkForExcessiveErrors(Error::Type _type, bool _advance = true);
+	// @returns true if error there are too many errors.
+	bool excessiveErrors(Error::Type _type);
 
 private:
 	void error(
@@ -142,6 +141,9 @@ private:
 		Error::Type _type,
 		SourceLocation const& _location = SourceLocation(),
 		std::string const& _description = std::string());
+
+	// @returns true if error shouldn't be stored
+	bool checkForExcessiveErrors(Error::Type _type);
 
 	ErrorList& m_errorList;
 
