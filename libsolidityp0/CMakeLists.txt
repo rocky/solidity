@@ -1,3 +1,4 @@
+# Until we have a clear separation, libyul has to be included here
 set(sources
 	analysis/ConstantEvaluator.cpp
 	analysis/ConstantEvaluator.h
@@ -32,6 +33,7 @@ set(sources
 	ast/ASTForward.h
 	ast/ASTJsonConverter.cpp
 	ast/ASTJsonConverter.h
+	ast/ASTPrinter.h
 	ast/ASTVisitor.h
 	ast/ExperimentalFeatures.h
 	ast/Types.cpp
@@ -41,6 +43,7 @@ set(sources
 	interface/CompilerStack.cpp
 	interface/CompilerStack.h
 	interface/ReadFile.h
+	interface/StandardCompiler.cpp
 	interface/StandardCompiler.h
 	interface/Version.cpp
 	interface/Version.h

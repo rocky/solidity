@@ -45,7 +45,9 @@ using namespace std;
 using namespace dev;
 using namespace langutil;
 using namespace dev::solidity;
-// using namespace yul;
+#ifdef ROCKY_REINSTATED
+using namespace yul;
+#endif
 
 namespace {
 
@@ -136,12 +138,19 @@ bool hashMatchesContent(string const& _hash, string const& _content)
 	}
 }
 
-bool isArtifactRequested(Json::Value const& _outputSelection, string const& _artifact)
+#ifdef ROCKY_REINSTATED
+bool isArtifactRequested(Json::Value const& _outputSelection, string const& _artifact, bool _wildcardMatchesIR)
 {
 	for (auto const& artifact: _outputSelection)
 		/// @TODO support sub-matching, e.g "evm" matches "evm.assembly"
-		if (artifact == "*" || artifact == _artifact)
+		if (artifact == _artifact)
 			return true;
+		else if (artifact == "*")
+		{
+			// "ir" and "irOptimized" can only be matched by "*" if activated.
+			if ((_artifact != "ir" && _artifact != "irOptimized") || _wildcardMatchesIR)
+				return true;
+		}
 	return false;
 }
 
@@ -158,7 +167,7 @@ bool isArtifactRequested(Json::Value const& _outputSelection, string const& _art
 ///
 /// @TODO optimise this. Perhaps flatten the structure upfront.
 ///
-bool isArtifactRequested(Json::Value const& _outputSelection, string const& _file, string const& _contract, string const& _artifact)
+bool isArtifactRequested(Json::Value const& _outputSelection, string const& _file, string const& _contract, string const& _artifact, bool _wildcardMatchesIR)
 {
 	if (!_outputSelection.isObject())
 		return false;
@@ -175,7 +184,7 @@ bool isArtifactRequested(Json::Value const& _outputSelection, string const& _fil
 				if (
 					_outputSelection[file].isMember(contract) &&
 					_outputSelection[file][contract].isArray() &&
-					isArtifactRequested(_outputSelection[file][contract], _artifact)
+					isArtifactRequested(_outputSelection[file][contract], _artifact, _wildcardMatchesIR)
 				)
 					return true;
 		}
@@ -183,10 +192,10 @@ bool isArtifactRequested(Json::Value const& _outputSelection, string const& _fil
 	return false;
 }
 
-bool isArtifactRequested(Json::Value const& _outputSelection, string const& _file, string const& _contract, vector<string> const& _artifacts)
+bool isArtifactRequested(Json::Value const& _outputSelection, string const& _file, string const& _contract, vector<string> const& _artifacts, bool _wildcardMatchesIR)
 {
 	for (auto const& artifact: _artifacts)
-		if (isArtifactRequested(_outputSelection, _file, _contract, artifact))
+		if (isArtifactRequested(_outputSelection, _file, _contract, artifact, _wildcardMatchesIR))
 			return true;
 	return false;
 }
@@ -200,6 +209,7 @@ bool isBinaryRequested(Json::Value const& _outputSelection)
 	// This does not inculde "evm.methodIdentifiers" on purpose!
 	static vector<string> const outputsThatRequireBinaries{
 		"*",
+		"ir", "irOptimized",
 		"evm.deployedBytecode", "evm.deployedBytecode.object", "evm.deployedBytecode.opcodes",
 		"evm.deployedBytecode.sourceMap", "evm.deployedBytecode.linkReferences",
 		"evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap",
@@ -210,10 +220,27 @@ bool isBinaryRequested(Json::Value const& _outputSelection)
 	for (auto const& fileRequests: _outputSelection)
 		for (auto const& requests: fileRequests)
 			for (auto const& output: outputsThatRequireBinaries)
-				if (isArtifactRequested(requests, output))
+				if (isArtifactRequested(requests, output, false))
 					return true;
 	return false;
 }
+
+/// @returns true if any Yul IR was requested. Note that as an exception, '*' does not
+/// yet match "ir" or "irOptimized"
+bool isIRRequested(Json::Value const& _outputSelection)
+{
+	if (!_outputSelection.isObject())
+		return false;
+
+	for (auto const& fileRequests: _outputSelection)
+		for (auto const& requests: fileRequests)
+			for (auto const& request: requests)
+				if (request == "ir" || request == "irOptimized")
+					return true;
+
+	return false;
+}
+
 
 Json::Value formatLinkReferences(std::map<size_t, std::string> const& linkReferences)
 {
@@ -251,6 +278,7 @@ Json::Value collectEVMObject(eth::LinkerObject const& _object, string const* _so
 	output["linkReferences"] = formatLinkReferences(_object.linkReferences);
 	return output;
 }
+#endif
 
 boost::optional<Json::Value> checkKeys(Json::Value const& _input, set<string> const& _keys, string const& _name)
 {
@@ -288,6 +316,7 @@ boost::optional<Json::Value> checkSettingsKeys(Json::Value const& _input)
 	return checkKeys(_input, keys, "settings");
 }
 
+#ifdef ROCKY_REINSTATED
 boost::optional<Json::Value> checkOptimizerKeys(Json::Value const& _input)
 {
 	static set<string> keys{"details", "enabled", "runs"};
@@ -310,6 +339,7 @@ boost::optional<Json::Value> checkOptimizerDetail(Json::Value const& _details, s
 	}
 	return {};
 }
+#endif
 
 boost::optional<Json::Value> checkMetadataKeys(Json::Value const& _input)
 {
@@ -363,7 +393,8 @@ boost::optional<Json::Value> checkOutputSelection(Json::Value const& _outputSele
 
 	return boost::none;
 }
-/// Validates the optimizer settings and returns them in a parsed object.
+
+#ifdef ROCKY_REINSTATED/// Validates the optimizer settings and returns them in a parsed object.
 /// On error returns the json-formatted error message.
 boost::variant<OptimiserSettings, Json::Value> parseOptimizerSettings(Json::Value const& _jsonInput)
 {
@@ -420,8 +451,9 @@ boost::variant<OptimiserSettings, Json::Value> parseOptimizerSettings(Json::Valu
 				return *error;
 		}
 	}
-	return std::move(settings);
+	return { std::move(settings) };
 }
+#endif
 
 }
 
@@ -444,13 +476,6 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 
 	if (sources.empty())
 		return formatFatalError("JSONError", "No input sources specified.");
-
-	Json::Value const& errorRecovery = _input["errorRecovery"];
-
-	if (!_errorRecovery.isBool())
-		return formatFatalError("JSONError", "\"settings.errorRecovery\" must be Boolean");
-
-	ret.errorRecovery = errorRecovery.asBool();
 
 	for (auto const& sourceName: sources.getMemberNames())
 	{
@@ -564,6 +589,13 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 	if (auto result = checkSettingsKeys(settings))
 		return *result;
 
+	if (settings.isMember("errorRecovery"))
+	{
+		if (!settings["errorRecovery"].isBool())
+			return formatFatalError("JSONError", "\"settings.errorRecovery\" must be a Boolean.");
+		ret.errorRecovery = settings["errorRecovery"].asBool();
+	}
+
 	if (settings.isMember("evmVersion"))
 	{
 		if (!settings["evmVersion"].isString())
@@ -587,6 +619,7 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 			return formatFatalError("JSONError", "Invalid remapping: \"" + remapping.asString() + "\"");
 	}
 
+#ifdef ROCKY_REINSTATED
 	if (settings.isMember("optimizer"))
 	{
 		auto optimiserSettings = parseOptimizerSettings(settings["optimizer"]);
@@ -636,13 +669,15 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 			}
 		}
 	}
-
+#endif
 	Json::Value metadataSettings = settings.get("metadata", Json::Value());
 
 	if (auto result = checkMetadataKeys(metadataSettings))
 		return *result;
 
+#ifdef ROCKY_REINSTATED
 	ret.metadataLiteralSources = metadataSettings.get("useLiteralContent", Json::Value(false)).asBool();
+#endif
 
 	Json::Value outputSelection = settings.get("outputSelection", Json::Value());
 
@@ -651,7 +686,7 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 
 	ret.outputSelection = std::move(outputSelection);
 
-	return std::move(ret);
+	return { std::move(ret) };
 }
 
 Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSettings _inputsAndSettings)
@@ -660,25 +695,39 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 
 	StringMap sourceList = std::move(_inputsAndSettings.sources);
 	compilerStack.setSources(sourceList);
+#ifdef ROCKY_REINSTATED
 	for (auto const& smtLib2Response: _inputsAndSettings.smtLib2Responses)
 		compilerStack.addSMTLib2Response(smtLib2Response.first, smtLib2Response.second);
+#endif
 	compilerStack.setEVMVersion(_inputsAndSettings.evmVersion);
 	compilerStack.setParserErrorRecovery(_inputsAndSettings.errorRecovery);
 	compilerStack.setRemappings(_inputsAndSettings.remappings);
+#ifdef ROCKY_REINSTATED
 	compilerStack.setOptimiserSettings(std::move(_inputsAndSettings.optimiserSettings));
 	compilerStack.setLibraries(_inputsAndSettings.libraries);
 	compilerStack.useMetadataLiteralSources(_inputsAndSettings.metadataLiteralSources);
+#endif
 	compilerStack.setRequestedContractNames(requestedContractNames(_inputsAndSettings.outputSelection));
+
+#ifdef ROCKY_REINSTATED
+	bool const irRequested = isIRRequested(_inputsAndSettings.outputSelection);
+
+	compilerStack.enableIRGeneration(irRequested);
+#endif
 
 	Json::Value errors = std::move(_inputsAndSettings.errors);
 
+#ifdef ROCKY_REINSTATED
 	bool const binariesRequested = isBinaryRequested(_inputsAndSettings.outputSelection);
-
+#endif
 	try
 	{
+
+#ifdef ROCKY_REINSTATED
 		if (binariesRequested)
 			compilerStack.compile();
 		else
+#endif
 			compilerStack.parseAndAnalyze();
 
 		for (auto const& error: compilerStack.errors())
@@ -764,31 +813,39 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 		));
 	}
 
+#ifdef ROCKY_REINSTATED
 	bool const analysisSuccess = compilerStack.state() >= CompilerStack::State::AnalysisSuccessful;
 	bool const compilationSuccess = compilerStack.state() == CompilerStack::State::CompilationSuccessful;
 
 	/// Inconsistent state - stop here to receive error reports from users
 	if (((binariesRequested && !compilationSuccess) || !analysisSuccess) && errors.empty())
 		return formatFatalError("InternalCompilerError", "No error reported, but compilation failed.");
+#endif
 
 	Json::Value output = Json::objectValue;
 
 	if (errors.size() > 0)
 		output["errors"] = std::move(errors);
 
+#ifdef ROCKY_REINSTATED
 	if (!compilerStack.unhandledSMTLib2Queries().empty())
 		for (string const& query: compilerStack.unhandledSMTLib2Queries())
 			output["auxiliaryInputRequested"]["smtlib2queries"]["0x" + keccak256(query).hex()] = query;
 
+	bool const wildcardMatchesIR = false;
+#endif
+
 	output["sources"] = Json::objectValue;
+#ifdef ROCKY_REINSTATED
 	unsigned sourceIndex = 0;
+
 	for (string const& sourceName: analysisSuccess ? compilerStack.sourceNames() : vector<string>())
 	{
 		Json::Value sourceResult = Json::objectValue;
 		sourceResult["id"] = sourceIndex++;
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, "", "ast"))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, "", "ast", wildcardMatchesIR))
 			sourceResult["ast"] = ASTJsonConverter(false, compilerStack.sourceIndices()).toJson(compilerStack.ast(sourceName));
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, "", "legacyAST"))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, "", "legacyAST", wildcardMatchesIR))
 			sourceResult["legacyAST"] = ASTJsonConverter(true, compilerStack.sourceIndices()).toJson(compilerStack.ast(sourceName));
 		output["sources"][sourceName] = sourceResult;
 	}
@@ -803,32 +860,38 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 
 		// ABI, documentation and metadata
 		Json::Value contractData(Json::objectValue);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "abi"))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "abi", wildcardMatchesIR))
 			contractData["abi"] = compilerStack.contractABI(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "metadata"))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "metadata", wildcardMatchesIR))
 			contractData["metadata"] = compilerStack.metadata(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "userdoc"))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "userdoc", wildcardMatchesIR))
 			contractData["userdoc"] = compilerStack.natspecUser(contractName);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "devdoc"))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "devdoc", wildcardMatchesIR))
 			contractData["devdoc"] = compilerStack.natspecDev(contractName);
+
+		// IR
+		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "ir", wildcardMatchesIR))
+			contractData["ir"] = compilerStack.yulIR(contractName);
+		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "irOptimized", wildcardMatchesIR))
+			contractData["irOptimized"] = compilerStack.yulIROptimized(contractName);
 
 		// EVM
 		Json::Value evmData(Json::objectValue);
-		// @TODO: add ir
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.assembly"))
+		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.assembly", wildcardMatchesIR))
 			evmData["assembly"] = compilerStack.assemblyString(contractName, sourceList);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.legacyAssembly"))
+		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.legacyAssembly", wildcardMatchesIR))
 			evmData["legacyAssembly"] = compilerStack.assemblyJSON(contractName, sourceList);
-		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.methodIdentifiers"))
+		if (isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.methodIdentifiers", wildcardMatchesIR))
 			evmData["methodIdentifiers"] = compilerStack.methodIdentifiers(contractName);
-		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.gasEstimates"))
+		if (compilationSuccess && isArtifactRequested(_inputsAndSettings.outputSelection, file, name, "evm.gasEstimates", wildcardMatchesIR))
 			evmData["gasEstimates"] = compilerStack.gasEstimates(contractName);
 
 		if (compilationSuccess && isArtifactRequested(
 			_inputsAndSettings.outputSelection,
 			file,
 			name,
-			{ "evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap", "evm.bytecode.linkReferences" }
+			{ "evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap", "evm.bytecode.linkReferences" },
+			wildcardMatchesIR
 		))
 			evmData["bytecode"] = collectEVMObject(
 				compilerStack.object(contractName),
@@ -839,7 +902,8 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 			_inputsAndSettings.outputSelection,
 			file,
 			name,
-			{ "evm.deployedBytecode", "evm.deployedBytecode.object", "evm.deployedBytecode.opcodes", "evm.deployedBytecode.sourceMap", "evm.deployedBytecode.linkReferences" }
+			{ "evm.deployedBytecode", "evm.deployedBytecode.object", "evm.deployedBytecode.opcodes", "evm.deployedBytecode.sourceMap", "evm.deployedBytecode.linkReferences" },
+			wildcardMatchesIR
 		))
 			evmData["deployedBytecode"] = collectEVMObject(
 				compilerStack.runtimeObject(contractName),
@@ -859,10 +923,11 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 	if (!contractsOutput.empty())
 		output["contracts"] = contractsOutput;
 
+#endif
 	return output;
 }
 
-
+#ifdef ROCKY_REINSTATED
 Json::Value StandardCompiler::compileYul(InputsAndSettings _inputsAndSettings)
 {
 	if (_inputsAndSettings.sources.size() != 1)
@@ -913,7 +978,8 @@ Json::Value StandardCompiler::compileYul(InputsAndSettings _inputsAndSettings)
 
 	string contractName = stack.parserResult()->name.str();
 
-	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "ir"))
+	bool const wildcardMatchesIR = true;
+	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "ir", wildcardMatchesIR))
 		output["contracts"][sourceName][contractName]["ir"] = stack.print();
 
 	stack.optimize();
@@ -924,21 +990,26 @@ Json::Value StandardCompiler::compileYul(InputsAndSettings _inputsAndSettings)
 		_inputsAndSettings.outputSelection,
 		sourceName,
 		contractName,
-		{ "evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap", "evm.bytecode.linkReferences" }
+		{ "evm.bytecode", "evm.bytecode.object", "evm.bytecode.opcodes", "evm.bytecode.sourceMap", "evm.bytecode.linkReferences" },
+		wildcardMatchesIR
 	))
 		output["contracts"][sourceName][contractName]["evm"]["bytecode"] = collectEVMObject(*object.bytecode, nullptr);
 
-	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "irOptimized"))
+	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "irOptimized", wildcardMatchesIR))
 		output["contracts"][sourceName][contractName]["irOptimized"] = stack.print();
-	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "evm.assembly"))
+	if (isArtifactRequested(_inputsAndSettings.outputSelection, sourceName, contractName, "evm.assembly", wildcardMatchesIR))
 		output["contracts"][sourceName][contractName]["evm"]["assembly"] = object.assembly;
 
 	return output;
 }
-
+#endif
 
 Json::Value StandardCompiler::compile(Json::Value const& _input) noexcept
 {
+#ifdef ROCKY_REINSTATED
+	YulStringRepository::reset();
+#endif
+
 	try
 	{
 		auto parsed = parseInput(_input);
@@ -947,8 +1018,10 @@ Json::Value StandardCompiler::compile(Json::Value const& _input) noexcept
 		InputsAndSettings settings = boost::get<InputsAndSettings>(std::move(parsed));
 		if (settings.language == "Solidity")
 			return compileSolidity(std::move(settings));
+#ifdef ROCKY_REINSTATED
 		else if (settings.language == "Yul")
 			return compileYul(std::move(settings));
+#endif
 		else
 			return formatFatalError("JSONError", "Only \"Solidity\" or \"Yul\" is supported as a language.");
 	}
