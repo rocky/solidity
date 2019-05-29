@@ -24,9 +24,7 @@
 #pragma once
 
 #include <libsolidityp0/interface/ReadFile.h>
-#ifdef ROCKY_REINSTATED
 #include <libsolidityp0/interface/OptimiserSettings.h>
-#endif
 
 #include <liblangutil/ErrorReporter.h>
 #include <liblangutil/EVMVersion.h>
@@ -395,9 +393,7 @@ private:
 #endif
 
 	ReadCallback::Callback m_readFile;
-#ifdef ROCKY_REINSTATED
 	OptimiserSettings m_optimiserSettings;
-#endif
 	langutil::EVMVersion m_evmVersion;
 	std::set<std::string> m_requestedContractNames;
 	bool m_generateIR;

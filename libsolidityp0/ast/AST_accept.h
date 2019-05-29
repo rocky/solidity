@@ -403,7 +403,8 @@ void Block::accept(ASTVisitor& _visitor)
 void Block::accept(ASTConstVisitor& _visitor) const
 {
 	if (_visitor.visit(*this))
-		if (m_statements.size() > 0 && m_statements[0] != nullptr) listAccept(m_statements, _visitor);
+		if (m_statements.size() > 0 && m_statements[0] != nullptr)
+			listAccept(m_statements, _visitor);
 	_visitor.endVisit(*this);
 }
 

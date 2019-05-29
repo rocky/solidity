@@ -264,8 +264,10 @@ bool CompilerStack::parse()
 
 bool CompilerStack::analyze()
 {
-	if ( (m_stackState != ParsingSuccessful && !m_parserErrorRecovery)
-		|| m_stackState >= AnalysisSuccessful )
+	if (
+		(m_stackState != ParsingSuccessful && !m_parserErrorRecovery) ||
+		m_stackState >= AnalysisSuccessful
+	)
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Must call analyze only after parsing was successful."));
 	resolveImports();
 
@@ -462,7 +464,7 @@ void CompilerStack::link()
 
 vector<string> CompilerStack::contractNames() const
 {
-	if (m_stackState < AnalysisSuccessful)
+	if (m_stackState < AnalysisSuccessful && !m_parserErrorRecovery)
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Parsing was not successful."));
 	vector<string> contractNames;
 	for (auto const& contract: m_contracts)
@@ -496,7 +498,12 @@ eth::AssemblyItems const* CompilerStack::assemblyItems(string const& _contractNa
 eth::AssemblyItems const* CompilerStack::runtimeAssemblyItems(string const& _contractName) const
 {
 	if (m_stackState != CompilationSuccessful)
-		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Compilation was not successful."));
+	{
+		if (m_parserErrorRecovery)
+			return nullptr;
+		else
+			BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Compilation was not successful."));
+	}
 
 	Contract const& currentContract = contract(_contractName);
 	return currentContract.compiler ? &contract(_contractName).compiler->runtimeAssemblyItems() : nullptr;
@@ -727,7 +734,7 @@ Scanner const& CompilerStack::scanner(string const& _sourceName) const
 
 SourceUnit const& CompilerStack::ast(string const& _sourceName) const
 {
-	if (m_stackState < ParsingSuccessful)
+	if (m_stackState < ParsingSuccessful && !m_parserErrorRecovery)
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Parsing was not successful."));
 
 	return *source(_sourceName).ast;

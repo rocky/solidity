@@ -254,6 +254,25 @@ bool SyntaxChecker::visit(UnaryOperation const& _operation)
 	return true;
 }
 
+#ifdef ROCKY_REINSTATED
+bool SyntaxChecker::visit(InlineAssembly const& _inlineAssembly)
+{
+	if (!m_useYulOptimizer)
+		return false;
+
+	if (yul::SideEffectsCollector(
+		_inlineAssembly.dialect(),
+		_inlineAssembly.operations()
+	).containsMSize())
+		m_errorReporter.syntaxError(
+			_inlineAssembly.location(),
+			"The msize instruction cannot be used when the Yul optimizer is activated because "
+			"it can change its semantics. Either disable the Yul optimizer or do not use the instruction."
+		);
+	return false;
+}
+#endif
+
 bool SyntaxChecker::visit(PlaceholderStatement const&)
 {
 	m_placeholderFound = true;
