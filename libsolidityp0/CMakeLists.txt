@@ -1,3 +1,4 @@
+# Until we have a clear separation, libyul has to be included here
 set(sources
 	ast/AST.cpp
 	ast/AST.h
@@ -17,6 +18,7 @@ set(sources
 	interface/CompilerStack.cpp
 	interface/CompilerStack.h
 	interface/ReadFile.h
+	interface/StandardCompiler.cpp
 	interface/StandardCompiler.h
 	interface/Version.cpp
 	interface/Version.h
