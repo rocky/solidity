@@ -475,13 +475,6 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 	if (sources.empty())
 		return formatFatalError("JSONError", "No input sources specified.");
 
-	Json::Value const& errorRecovery = _input["errorRecovery"];
-
-	if (!errorRecovery.isBool() && !errorRecovery.isNull())
-		return formatFatalError("JSONError", "\"settings.errorRecovery\" must be Boolean");
-
-	ret.errorRecovery = errorRecovery.asBool();
-
 	for (auto const& sourceName: sources.getMemberNames())
 	{
 		string hash;
@@ -593,6 +586,13 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 
 	if (auto result = checkSettingsKeys(settings))
 		return *result;
+
+	if (settings.isMember("errorRecovery"))
+	{
+		if (!settings["errorRecovery"].isBool())
+			return formatFatalError("JSONError", "\"settings.errorRecovery\" must be a Boolean.");
+		ret.errorRecovery = settings["errorRecovery"].asBool();
+	}
 
 	if (settings.isMember("evmVersion"))
 	{

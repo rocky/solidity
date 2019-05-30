@@ -57,6 +57,9 @@ bool containsError(Json::Value const& _compilerResult, string const& _type, stri
 	return false;
 }
 
+// Note that there is a warning when compilng pre-release code which
+// is most of the time when this test gets run. That is perhaps why
+// you don't see a containsNoErrors() routine.
 bool containsAtMostWarnings(Json::Value const& _compilerResult)
 {
 	if (!_compilerResult.isMember("errors"))
@@ -98,6 +101,8 @@ Json::Value compile(string _input)
 } // end anonymous namespace
 
 BOOST_AUTO_TEST_SUITE(StandardCompiler)
+
+#ifdef ROCKY_FULL_TESTING
 
 BOOST_AUTO_TEST_CASE(assume_object_input)
 {
@@ -211,7 +216,6 @@ BOOST_AUTO_TEST_CASE(unexpected_trailing_test)
 	BOOST_CHECK(containsError(result, "JSONError", "* Line 10, Column 2\n  Extra non-whitespace after JSON value.\n"));
 }
 
-
 BOOST_AUTO_TEST_CASE(smoke_test)
 {
 	char const* input = R"(
@@ -226,6 +230,45 @@ BOOST_AUTO_TEST_CASE(smoke_test)
 	)";
 	Json::Value result = compile(input);
 	BOOST_CHECK(containsAtMostWarnings(result));
+}
+#endif
+
+BOOST_AUTO_TEST_CASE(error_recovery_not_boolean)
+{
+	auto input = R"(
+	{
+		"language": "Solidity",
+		"settings": {
+			"errorRecovery": "1"
+		},
+		"sources": {
+			"empty": {
+				"content": ""
+			}
+		}
+	}
+	)";
+
+	Json::Value result = compile(input);
+	BOOST_CHECK(containsError(result, "JSONError", "\"settings.errorRecovery\" must be a Boolean."));
+
+	input = R"(
+	{
+		"language": "Solidity",
+		"settings": {
+			"errorRecovery": true
+		},
+		"sources": {
+			"empty": {
+				"content": ""
+			}
+		}
+	}
+	)";
+
+	result = compile(input);
+	BOOST_CHECK(containsAtMostWarnings(result));
+
 }
 
 #ifdef ROCKY_REINSTATED
