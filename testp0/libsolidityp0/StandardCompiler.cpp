@@ -233,7 +233,7 @@ BOOST_AUTO_TEST_CASE(smoke_test)
 }
 #endif
 
-BOOST_AUTO_TEST_CASE(error_recovery_not_boolean)
+BOOST_AUTO_TEST_CASE(error_recovery_field)
 {
 	auto input = R"(
 	{
