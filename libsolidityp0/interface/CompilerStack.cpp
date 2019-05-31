@@ -274,7 +274,11 @@ bool CompilerStack::analyze()
 	bool noErrors = true;
 
 	try {
+#ifdef ROCKY_REINSTATED
 		SyntaxChecker syntaxChecker(m_errorReporter, m_optimiserSettings.runYulOptimiser);
+#else
+		SyntaxChecker syntaxChecker(m_errorReporter);
+#endif
 		for (Source const* source: m_sourceOrder)
 			if (!syntaxChecker.checkSyntax(*source->ast))
 				noErrors = false;

@@ -45,10 +45,16 @@ class SyntaxChecker: private ASTConstVisitor
 {
 public:
 	/// @param _errorReporter provides the error logging functionality.
+#ifdef ROCKY_REINSTATED
 	SyntaxChecker(langutil::ErrorReporter& _errorReporter, bool _useYulOptimizer):
 		m_errorReporter(_errorReporter),
 		m_useYulOptimizer(_useYulOptimizer)
 	{}
+#else
+	SyntaxChecker(langutil::ErrorReporter& _errorReporter):
+		m_errorReporter(_errorReporter)
+	{}
+#endif
 
 	bool checkSyntax(ASTNode const& _astRoot);
 
@@ -96,7 +102,9 @@ private:
 
 	langutil::ErrorReporter& m_errorReporter;
 
+#ifdef ROCKY_REINSTATED
 	bool m_useYulOptimizer = false;
+#endif
 
 	/// Flag that indicates whether a function modifier actually contains '_'.
 	bool m_placeholderFound = false;
