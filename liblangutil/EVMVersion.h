@@ -20,6 +20,10 @@
 
 #pragma once
 
+#ifdef ROCKY_REINSTATED
+#include <libevmasm/Instruction.h>
+#endif
+
 #include <string>
 
 #include <boost/optional.hpp>
@@ -77,6 +81,10 @@ public:
 	bool hasBitwiseShifting() const { return *this >= constantinople(); }
 	bool hasCreate2() const { return *this >= constantinople(); }
 	bool hasExtCodeHash() const { return *this >= constantinople(); }
+
+#ifdef ROCKY_REINSTATED
+	bool hasOpcode(dev::eth::Instruction _opcode) const;
+#endif
 
 	/// Whether we have to retain the costs for the call opcode itself (false),
 	/// or whether we can just forward easily all remaining gas (true).
