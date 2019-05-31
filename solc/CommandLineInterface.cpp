@@ -1426,10 +1426,10 @@ void CommandLineInterface::outputCompilationResults()
 
 	// do we need AST output?
 	handleAst(g_argAst);
-#ifdef ROCKY_REINSTATED
 	handleAst(g_argAstJson);
 	handleAst(g_argAstCompactJson);
 
+#ifdef ROCKY_REINSTATED
 	vector<string> contracts = m_compiler->contractNames();
 	for (string const& contract: contracts)
 	{
