@@ -27,11 +27,7 @@
 
 #include <libsolidityp0/interface/Version.h>
 #include <libsolidityp0/parsing/Parser.h>
-
-#ifdef ROCKY_REINSTATED
-# include <libsolidityp0/ast/ASTPrinter.h>
-#endif
-
+#include <libsolidityp0/ast/ASTPrinter.h>
 #include <libsolidityp0/ast/ASTJsonConverter.h>
 
 #ifdef ROCKY_REINSTATED
@@ -885,7 +881,6 @@ bool CommandLineInterface::processInput()
 		}
 	}
 
-#ifdef ROCKY_HAS_GONE_OVER
 	if (m_args.count(g_argStandardJSON))
 	{
 		string input = dev::readStandardInput();
@@ -893,7 +888,6 @@ bool CommandLineInterface::processInput()
 		sout() << compiler.compile(std::move(input)) << endl;
 		return true;
 	}
-#endif
 
 	if (!readInputFilesAndConfigureRemappings())
 		return false;
@@ -971,27 +965,23 @@ bool CommandLineInterface::processInput()
 	else
 		formatter = make_unique<SourceReferenceFormatter>(serr(false));
 
+	bool errorRecovery = m_args.count(g_argErrorRecovery);
 	try
 	{
 #ifdef ROCKY_HAS_GONE_OVER
 		if (m_args.count(g_argMetadataLiteral) > 0)
 			m_compiler->useMetadataLiteralSources(true);
-#endif
 		if (m_args.count(g_argInputFile))
 			m_compiler->setRemappings(m_remappings);
+#endif
 		m_compiler->setSources(m_sourceCodes);
+		m_compiler->setParserErrorRecovery(errorRecovery);
 #ifdef ROCKY_HAS_GONE_OVER
 		if (m_args.count(g_argLibraries))
 			m_compiler->setLibraries(m_libraries);
-#endif
-		if (m_args.count(g_argErrorRecovery))
-			m_compiler->setParserErrorRecovery(false);
-		else
-			m_compiler->setParserErrorRecovery(true);
 		m_compiler->setEVMVersion(m_evmVersion);
 		// TODO: Perhaps we should not compile unless requested
 
-#ifdef ROCKY_HAS_GONE_OVER
 		m_compiler->enableIRGeneration(m_args.count(g_argIR));
 
 		OptimiserSettings settings = m_args.count(g_argOptimize) ? OptimiserSettings::standard() : OptimiserSettings::minimal();
@@ -1009,7 +999,7 @@ bool CommandLineInterface::processInput()
 			formatter->printErrorInformation(*error);
 		}
 
-		if (!successful)
+		if (!successful && !errorRecovery)
 			return false;
 	}
 	catch (CompilerError const& _exception)
@@ -1141,8 +1131,6 @@ void CommandLineInterface::handleCombinedJSON()
 
 void CommandLineInterface::handleAst(string const& _argStr)
 {
-#ifdef ROCKY_REINSTATED
-
 	string title;
 
 	if (_argStr == g_argAst)
@@ -1160,6 +1148,7 @@ void CommandLineInterface::handleAst(string const& _argStr)
 		vector<ASTNode const*> asts;
 		for (auto const& sourceCode: m_sourceCodes)
 			asts.push_back(&m_compiler->ast(sourceCode.first));
+#ifdef ROCKY_REINSTATED
 		map<ASTNode const*, eth::GasMeter::GasConsumption> gasCosts;
 		for (auto const& contract : m_compiler->contractNames())
 		{
@@ -1174,6 +1163,7 @@ void CommandLineInterface::handleAst(string const& _argStr)
 			}
 
 		}
+#endif
 
 		bool legacyFormat = !m_args.count(g_argAstCompactJson);
 		if (m_args.count(g_argOutputDir))
@@ -1206,8 +1196,11 @@ void CommandLineInterface::handleAst(string const& _argStr)
 				{
 					ASTPrinter printer(
 						m_compiler->ast(sourceCode.first),
-						sourceCode.second,
+						sourceCode.second
+#ifdef ROCKY_REINSTATED
+						,
 						gasCosts
+#endif
 					);
 					printer.print(sout());
 				}
@@ -1216,9 +1209,6 @@ void CommandLineInterface::handleAst(string const& _argStr)
 			}
 		}
 	}
-#else
-	sout () << "readInputFiles and Configuration not handled here: " << _argStr << endl;
-#endif
 }
 
 bool CommandLineInterface::actOnInput()
@@ -1434,9 +1424,9 @@ void CommandLineInterface::outputCompilationResults()
 {
 	handleCombinedJSON();
 
-#ifdef ROCKY_REINSTATED
 	// do we need AST output?
 	handleAst(g_argAst);
+#ifdef ROCKY_REINSTATED
 	handleAst(g_argAstJson);
 	handleAst(g_argAstCompactJson);
 
