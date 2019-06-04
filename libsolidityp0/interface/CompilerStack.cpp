@@ -416,9 +416,9 @@ bool CompilerStack::analyze()
 		return false;
 }
 
-bool CompilerStack::parseAndAnalyze(bool astOnly)
+bool CompilerStack::parseAndAnalyze(bool _astOnly)
 {
-	return (parse() || astOnly) && analyze();
+	return (parse() || _astOnly) && analyze();
 }
 
 bool CompilerStack::isRequestedContract(ContractDefinition const& _contract) const

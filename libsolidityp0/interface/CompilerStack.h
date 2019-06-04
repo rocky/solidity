@@ -184,7 +184,7 @@ public:
 
 	/// Parses and analyzes all source units that were added
 	/// @returns false on error.
-	bool parseAndAnalyze(bool astOnly = false);
+	bool parseAndAnalyze(bool _astOnly = false);
 
 	/// Compiles the source units that were previously added and parsed.
 	/// @returns false on error.
