@@ -183,7 +183,8 @@ public:
 	bool analyze();
 
 	/// Parses and analyzes all source units that were added
-	/// @returns false on error.
+	/// @returns false on error. If @a _astOnly is true,
+	/// we just do steps up to AST generation and tolerate parsing errors.
 	bool parseAndAnalyze(bool _astOnly = false);
 
 	/// Compiles the source units that were previously added and parsed.
@@ -414,6 +415,9 @@ private:
 	bool m_metadataLiteralSources = false;
 	bool m_parserErrorRecovery = false;
 	State m_stackState = Empty;
+#ifdef ROCKY_REINSTATED
+	bool m_release = VersionIsRelease;
+#endif
 };
 
 }
