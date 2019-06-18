@@ -477,6 +477,8 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 	if (sources.empty())
 		return formatFatalError("JSONError", "No input sources specified.");
 
+	ret.errors = Json::arrayValue;
+
 	for (auto const& sourceName: sources.getMemberNames())
 	{
 		string hash;
