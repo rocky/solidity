@@ -312,7 +312,7 @@ boost::optional<Json::Value> checkAuxiliaryInputKeys(Json::Value const& _input)
 
 boost::optional<Json::Value> checkSettingsKeys(Json::Value const& _input)
 {
-	static set<string> keys{"errorRecovery", "evmVersion", "libraries", "metadata", "optimizer", "outputSelection", "remappings"};
+	static set<string> keys{"parserErrorRecovery", "evmVersion", "libraries", "metadata", "optimizer", "outputSelection", "remappings"};
 	return checkKeys(_input, keys, "settings");
 }
 
@@ -593,7 +593,14 @@ boost::variant<StandardCompiler::InputsAndSettings, Json::Value> StandardCompile
 	{
 		if (!settings["errorRecovery"].isBool())
 			return formatFatalError("JSONError", "\"settings.errorRecovery\" must be a Boolean.");
-		ret.errorRecovery = settings["errorRecovery"].asBool();
+		ret.parserErrorRecovery = settings["parserErrorRecovery"].asBool();
+	}
+
+	if (settings.isMember("parserErrorRecovery"))
+	{
+		if (!settings["parserErrorRecovery"].isBool())
+			return formatFatalError("JSONError", "\"settings.parserErrorRecovery\" must be a Boolean.");
+		ret.parserErrorRecovery = settings["parserErrorRecovery"].asBool();
 	}
 
 	if (settings.isMember("evmVersion"))
@@ -700,7 +707,7 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 		compilerStack.addSMTLib2Response(smtLib2Response.first, smtLib2Response.second);
 #endif
 	compilerStack.setEVMVersion(_inputsAndSettings.evmVersion);
-	compilerStack.setParserErrorRecovery(_inputsAndSettings.errorRecovery);
+	compilerStack.setParserErrorRecovery(_inputsAndSettings.parserErrorRecovery);
 	compilerStack.setRemappings(_inputsAndSettings.remappings);
 #ifdef ROCKY_REINSTATED
 	compilerStack.setOptimiserSettings(std::move(_inputsAndSettings.optimiserSettings));

@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(error_recovery_field)
 	{
 		"language": "Solidity",
 		"settings": {
-			"errorRecovery": "1"
+			"parserErrorRecovery": "1"
 		},
 		"sources": {
 			"empty": {
@@ -250,13 +250,13 @@ BOOST_AUTO_TEST_CASE(error_recovery_field)
 	)";
 
 	Json::Value result = compile(input);
-	BOOST_CHECK(containsError(result, "JSONError", "\"settings.errorRecovery\" must be a Boolean."));
+	BOOST_CHECK(containsError(result, "JSONError", "\"settings.parserErrorRecovery\" must be a Boolean."));
 
 	input = R"(
 	{
 		"language": "Solidity",
 		"settings": {
-			"errorRecovery": true
+			"parserErrorRecovery": true
 		},
 		"sources": {
 			"empty": {
