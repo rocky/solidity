@@ -19,6 +19,7 @@
 
 #include <testp0/TestCase.h>
 #include <testp0/libsolidityp0/SyntaxTest.h>
+#include <testp0/libsolidityp0/ASTRecoveryTest.h>
 
 #include <boost/filesystem.hpp>
 
@@ -46,6 +47,7 @@ Testsuite const g_interactiveTestsuites[] = {
 /*
 	Title                  Path              Subpath                SMT    IPC    Creator function */
 	{"ErrorRecovery",       "libsolidityp0", "errorRecoveryTests",  false, false, &SyntaxTest::createErrorRecovery},
+	{"ASTRecovery",         "libsolidityp0", "ASTRecoveryTests",    false, false, &ASTRecoveryTest::create},
 };
 
 }

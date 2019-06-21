@@ -6,6 +6,7 @@ add_executable(isolptest
 	../TestCase.cpp
 	../libsolidityp0/util/TestFileParser.cpp
 	../libsolidityp0/SyntaxTest.cpp
+	../libsolidityp0/ASTRecoveryTest.cpp
 	../libsolidityp0/AnalysisFramework.cpp
 )
 target_link_libraries(isolptest PRIVATE solidityp0 ${Boost_PROGRAM_OPTIONS_LIBRARIES} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARIES})

@@ -741,6 +741,9 @@ SourceUnit const& CompilerStack::ast(string const& _sourceName) const
 	if (m_stackState < ParsingSuccessful && !m_parserErrorRecovery)
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Parsing was not successful."));
 
+	// if (source(_sourceName).ast == nullptr)
+	// 	BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Parsing with error recovery did not produce an AST."));
+
 	return *source(_sourceName).ast;
 }
 

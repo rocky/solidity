@@ -52,8 +52,7 @@ ASTPrinter::ASTPrinter(
 void ASTPrinter::print(ostream& _stream)
 {
 	m_ostream = &_stream;
-	if (m_ast != nullptr)
-		m_ast->accept(*this);
+	m_ast->accept(*this);
 	m_ostream = nullptr;
 }
 
