@@ -967,7 +967,6 @@ bool CommandLineInterface::processInput()
 	else
 		formatter = make_unique<SourceReferenceFormatter>(serr(false));
 
-	bool errorRecovery = m_args.count(g_argErrorRecovery);
 	try
 	{
 #ifdef ROCKY_HAS_GONE_OVER
@@ -977,7 +976,7 @@ bool CommandLineInterface::processInput()
 			m_compiler->setRemappings(m_remappings);
 #endif
 		m_compiler->setSources(m_sourceCodes);
-		m_compiler->setParserErrorRecovery(errorRecovery);
+		m_compiler->setParserErrorRecovery(m_args.count(g_argErrorRecovery));
 #ifdef ROCKY_HAS_GONE_OVER
 		if (m_args.count(g_argLibraries))
 			m_compiler->setLibraries(m_libraries);
@@ -1001,7 +1000,7 @@ bool CommandLineInterface::processInput()
 			formatter->printErrorInformation(*error);
 		}
 
-		if (!successful && !errorRecovery)
+		if (!successful && !m_args.count(g_argErrorRecovery))
 			return false;
 	}
 	catch (CompilerError const& _exception)
