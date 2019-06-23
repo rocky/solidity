@@ -51,8 +51,8 @@ TestCase::TestResult ASTRecoveryTest::run(ostream& _stream, string const& _lineP
 	compiler().setSources({{"", versionPragma + m_source}});
 	compiler().setEVMVersion(m_evmVersion);
 	compiler().setParserErrorRecovery(m_parserErrorRecovery);
-	if (compiler().parse())
-		compiler().analyze();
+	compiler().parse();
+	compiler().analyze();
 
 	// For now we just want to make sure we don't SEGV
 	(void) _stream;

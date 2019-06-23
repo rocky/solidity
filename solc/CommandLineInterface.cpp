@@ -739,7 +739,7 @@ Allowed options)",
 		(g_argColor.c_str(), "Force colored output.")
 		(g_argNoColor.c_str(), "Explicitly disable colored output, disabling terminal auto-detection.")
 		(g_argNewReporter.c_str(), "Enables new diagnostics reporter.")
-		(g_argErrorRecovery.c_str(), "Disables additional parser error recovery.")
+		(g_argErrorRecovery.c_str(), "Enables additional parser error recovery.")
 		(g_argIgnoreMissingFiles.c_str(), "Ignore missing files.");
 	po::options_description outputComponents("Output Components");
 	outputComponents.add_options()
