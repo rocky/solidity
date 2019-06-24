@@ -104,47 +104,48 @@ efficient code, for example:
 
     pragma solidity >=0.4.16 <0.7.0;
 
+
     library VectorSum {
         // This function is less efficient because the optimizer currently fails to
         // remove the bounds checks in array access.
-        function sumSolidity(uint[] memory _data) public pure returns (uint o_sum) {
+        function sumSolidity(uint[] memory _data) public pure returns (uint sum) {
             for (uint i = 0; i < _data.length; ++i)
-                o_sum += _data[i];
+                sum += _data[i];
         }
 
         // We know that we only access the array in bounds, so we can avoid the check.
         // 0x20 needs to be added to an array because the first slot contains the
         // array length.
-        function sumAsm(uint[] memory _data) public pure returns (uint o_sum) {
+        function sumAsm(uint[] memory _data) public pure returns (uint sum) {
             for (uint i = 0; i < _data.length; ++i) {
                 assembly {
-                    o_sum := add(o_sum, mload(add(add(_data, 0x20), mul(i, 0x20))))
+                    sum := add(sum, mload(add(add(_data, 0x20), mul(i, 0x20))))
                 }
             }
         }
 
         // Same as above, but accomplish the entire code within inline assembly.
-        function sumPureAsm(uint[] memory _data) public pure returns (uint o_sum) {
+        function sumPureAsm(uint[] memory _data) public pure returns (uint sum) {
             assembly {
-               // Load the length (first 32 bytes)
-               let len := mload(_data)
+                // Load the length (first 32 bytes)
+                let len := mload(_data)
 
-               // Skip over the length field.
-               //
-               // Keep temporary variable so it can be incremented in place.
-               //
-               // NOTE: incrementing _data would result in an unusable
-               //       _data variable after this assembly block
-               let data := add(_data, 0x20)
+                // Skip over the length field.
+                //
+                // Keep temporary variable so it can be incremented in place.
+                //
+                // NOTE: incrementing _data would result in an unusable
+                //       _data variable after this assembly block
+                let data := add(_data, 0x20)
 
-               // Iterate until the bound is not met.
-               for
-                   { let end := add(data, mul(len, 0x20)) }
-                   lt(data, end)
-                   { data := add(data, 0x20) }
-               {
-                   o_sum := add(o_sum, mload(data))
-               }
+                // Iterate until the bound is not met.
+                for
+                    { let end := add(data, mul(len, 0x20)) }
+                    lt(data, end)
+                    { data := add(data, 0x20) }
+                {
+                    sum := add(sum, mload(data))
+                }
             }
         }
     }
@@ -414,7 +415,8 @@ Local Solidity variables are available for assignments, for example:
     To be safe, always clear the data properly before you use it
     in a context where this is important:
     ``uint32 x = f(); assembly { x := and(x, 0xffffffff) /* now use x */ }``
-    To clean signed types, you can use the ``signextend`` opcode.
+    To clean signed types, you can use the ``signextend`` opcode:
+    ``assembly { signextend(<num_bytes_of_x_minus_one>, x) }``
 
 Labels
 ------
@@ -594,21 +596,21 @@ of their block is reached.
 Conventions in Solidity
 -----------------------
 
-In contrast to EVM assembly, Solidity knows types which are narrower than 256 bits,
-e.g. ``uint24``. In order to make them more efficient, most arithmetic operations just
-treat them as 256-bit numbers and the higher-order bits are only cleaned at the
-point where it is necessary, i.e. just shortly before they are written to memory
-or before comparisons are performed. This means that if you access such a variable
-from within inline assembly, you might have to manually clean the higher order bits
+In contrast to EVM assembly, Solidity has types which are narrower than 256 bits,
+e.g. ``uint24``. For efficiency, most arithmetic operations ignore the fact that types can be shorter than 256
+bits, and the higher-order bits are cleaned when necessary,
+i.e., shortly before they are written to memory or before comparisons are performed.
+This means that if you access such a variable
+from within inline assembly, you might have to manually clean the higher-order bits
 first.
 
-Solidity manages memory in a very simple way: There is a "free memory pointer"
-at position ``0x40`` in memory. If you want to allocate memory, just use the memory
-starting from where this pointer points at and update it accordingly.
+Solidity manages memory in the following way. There is a "free memory pointer"
+at position ``0x40`` in memory. If you want to allocate memory, use the memory
+starting from where this pointer points at and update it.
 There is no guarantee that the memory has not been used before and thus
 you cannot assume that its contents are zero bytes.
 There is no built-in mechanism to release or free allocated memory.
-Here is an assembly snippet that can be used for allocating memory::
+Here is an assembly snippet you can use for allocating memory that follows the process outlined above::
 
     function allocate(length) -> pos {
       pos := mload(0x40)
@@ -616,13 +618,13 @@ Here is an assembly snippet that can be used for allocating memory::
     }
 
 The first 64 bytes of memory can be used as "scratch space" for short-term
-allocation. The 32 bytes after the free memory pointer (i.e. starting at ``0x60``)
-is meant to be zero permanently and is used as the initial value for
+allocation. The 32 bytes after the free memory pointer (i.e., starting at ``0x60``)
+are meant to be zero permanently and is used as the initial value for
 empty dynamic memory arrays.
 This means that the allocatable memory starts at ``0x80``, which is the initial value
 of the free memory pointer.
 
-Elements in memory arrays in Solidity always occupy multiples of 32 bytes (yes, this is
+Elements in memory arrays in Solidity always occupy multiples of 32 bytes (this is
 even true for ``byte[]``, but not for ``bytes`` and ``string``). Multi-dimensional memory
 arrays are pointers to memory arrays. The length of a dynamic array is stored at the
 first slot of the array and followed by the array elements.
@@ -630,7 +632,7 @@ first slot of the array and followed by the array elements.
 .. warning::
     Statically-sized memory arrays do not have a length field, but it might be added later
     to allow better convertibility between statically- and dynamically-sized arrays, so
-    please do not rely on that.
+    do not rely on this.
 
 
 Standalone Assembly
@@ -693,12 +695,13 @@ We consider the runtime bytecode of the following Solidity program::
 
     pragma solidity >=0.4.16 <0.7.0;
 
+
     contract C {
-      function f(uint x) public pure returns (uint y) {
-        y = 1;
-        for (uint i = 0; i < x; i++)
-          y = 2 * y;
-      }
+        function f(uint x) public pure returns (uint y) {
+            y = 1;
+            for (uint i = 0; i < x; i++)
+                y = 2 * y;
+        }
     }
 
 The following assembly will be generated::

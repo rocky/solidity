@@ -1,3 +1,67 @@
+### 0.5.10 (unreleased)
+
+Important Bugfixes:
+ * Fix incorrect abi encoding of storage array of data type that occupy multiple storage slots
+
+
+Language Features:
+
+
+
+Compiler Features:
+ * Optimizer: Add rule to simplify SUB(~0, X) to NOT(X).
+ * Commandline Interface: Experimental parser error recovery via the ``--error-recovery`` commandline switch.
+ * Yul Optimizer: Make the optimizer work for all dialects of Yul including eWasm.
+
+
+
+Bugfixes:
+ * Yul / Inline Assembly Parser: Disallow trailing commas in function call arguments.
+ * Set state mutability of the function type members ``gas`` and ``value`` to pure (while their return type inherits state mutability from the function type).
+
+
+Build System:
+ * Attempt to use stock Z3 cmake files to find Z3 and only fall back to manual discovery.
+ * Generate a cmake error for gcc versions older than 5.0.
+ * CMake: use imported targets for boost.
+ * Emscripten build: upgrade to boost 1.70.
+
+
+
+### 0.5.9 (2019-05-28)
+
+Language Features:
+ * Inline Assembly: Revert change introduced in 0.5.7: The ``callvalue()`` instruction does not require ``payable`` anymore.
+ * Static Analyzer: Disallow libraries calling themselves externally.
+
+
+Compiler Features:
+ * Assembler: Encode the compiler version in the deployed bytecode.
+ * Code Generator: Fix handling of structs of dynamic size as constructor parameters.
+ * Inline Assembly: Disallow the combination of ``msize()`` and the Yul optimizer.
+ * Metadata: Add IPFS hashes of source files.
+ * Optimizer: Add rule to simplify SHL/SHR combinations.
+ * Optimizer: Add rules for multiplication and division by left-shifted one.
+ * SMTChecker: Support inherited state variables.
+ * SMTChecker: Support tuples and function calls with multiple return values.
+ * SMTChecker: Support ``delete``.
+ * SMTChecker: Inline external function calls to ``this``.
+ * Yul Optimizer: Simplify single-run ``for`` loops to ``if`` statements.
+ * Yul Optimizer: Optimize representation of numbers.
+ * Yul Optimizer: Do not inline recursive functions.
+ * Yul Optimizer: Do not remove instructions that affect ``msize()`` if ``msize()`` is used.
+
+Bugfixes:
+ * Code Generator: Explicitly turn uninitialized internal function pointers into invalid functions when loaded from storage.
+ * Code Generator: Fix assertion failure when assigning structs containing array of mapping.
+ * Compiler Internals: Reset the Yul string repository before each compilation, freeing up memory.
+ * SMTChecker: Fix bad cast in base constructor modifier.
+ * SMTChecker: Fix internal error when visiting state variable inherited from base class.
+ * SMTChecker: Fix internal error in fixed point operations.
+ * SMTChecker: Fix internal error in assignment to unsupported type.
+ * SMTChecker: Fix internal error in branching when inlining function calls that modify local variables.
+
+
 ### 0.5.8 (2019-04-30)
 
 Important Bugfixes:
@@ -26,6 +90,7 @@ Compiler Features:
  * Yul: Adds break and continue keywords to for-loop syntax.
  * Yul: Support ``.`` as part of identifiers.
  * Yul Optimizer: Adds steps for detecting and removing of dead code.
+ * Yul Code Generator: Directly jump over a series of function definitions (instead of jumping over each one)
 
 
 Bugfixes:
@@ -33,6 +98,7 @@ Bugfixes:
  * SMTChecker: SSA control-flow did not take into account state variables that were modified inside inlined functions that were called inside branches.
  * Type System: Use correct type name for contracts in event parameters when used in libraries. This affected code generation.
  * Type System: Allow direct call to base class functions that have overloads.
+ * Type System: Warn about shadowing builtin variables if user variables are named ``this`` or ``super``.
  * Yul: Properly register functions and disallow shadowing between function variables and variables in the outside scope.
 
 

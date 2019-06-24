@@ -20,10 +20,11 @@ Remix
 
 *We recommend Remix for small contracts and for quickly learning Solidity.*
 
-`Access Remix online <https://remix.ethereum.org/>`_, you don't need to install anything.
+`Access Remix online <https://remix.ethereum.org/>`_, you do not need to install anything.
 If you want to use it without connection to the Internet, go to
 https://github.com/ethereum/remix-live/tree/gh-pages and download the ``.zip`` file as
-explained on that page.
+explained on that page. Remix is also a convenient option for testing nightly builds
+without installing multiple Solidity versions.
 
 Further options on this page detail installing commandline Solidity compiler software
 on your computer. Choose a commandline compiler if you are working on a larger contract
@@ -60,17 +61,36 @@ Please refer to the solc-js repository for instructions.
 Docker
 ======
 
-We provide up to date docker builds for the compiler. The ``stable``
-repository contains released versions while the ``nightly``
-repository contains potentially unstable changes in the develop branch.
+Docker images of Solidity builds are available using the ``solc`` image from the ``ethereum`` organisation.
+Use the ``stable`` tag for the latest released version, and ``nightly`` for potentially unstable changes in the develop branch.
+
+The Docker image runs the compiler executable, so you can pass all compiler arguments to it.
+For example, the command below pulls the stable version of the ``solc`` image (if you do not have it already),
+and runs it in a new container, passing the ``--help`` argument.
 
 .. code-block:: bash
 
-    docker run ethereum/solc:stable --version
+    docker run ethereum/solc:stable --help
 
-Currently, the docker image only contains the compiler executable,
-so you have to do some additional work to link in the source and
-output directories.
+You can also specify release build versions in the tag, for example, for the 0.5.4 release.
+
+.. code-block:: bash
+
+    docker run ethereum/solc:0.5.4 --help
+
+To use the Docker image to compile Solidity files on the host machine mount a
+local folder for input and output, and specify the contract to compile. For example.
+
+.. code-block:: bash
+
+    docker run -v /local/path:/sources ethereum/solc:stable -o /sources/output --abi --bin /sources/Contract.sol
+
+You can also use the standard JSON interface (which is recommended when using the compiler with tooling).
+When using this interface it is not necessary to mount any directories.
+
+.. code-block:: bash
+
+    docker run ethereum/solc:stable --standard-json < input.json > output.json
 
 Binary Packages
 ===============
@@ -164,7 +184,7 @@ The following are dependencies for all builds of Solidity:
 +-----------------------------------+-------------------------------------------------------+
 | Software                          | Notes                                                 |
 +===================================+=======================================================+
-| `CMake`_                          | Cross-platform build file generator.                  |
+| `CMake`_ (version 3.5+)           | Cross-platform build file generator.                  |
 +-----------------------------------+-------------------------------------------------------+
 | `Boost`_  (version 1.65+)         | C++ libraries.                                        |
 +-----------------------------------+-------------------------------------------------------+
@@ -180,6 +200,13 @@ The following are dependencies for all builds of Solidity:
 .. _Boost: https://www.boost.org
 .. _CMake: https://cmake.org/download/
 .. _z3: https://github.com/Z3Prover/z3
+
+.. note::
+    Solidity versions prior to 0.5.10 can fail to correctly link against Boost versions 1.70+.
+    A possible workaround is to temporarily rename ``<Boost install path>/lib/cmake/Boost-1.70.0``
+    prior to running the cmake command to configure solidity.
+
+    Starting from 0.5.10 linking against Boost 1.70+ should work without manual intervention.
 
 Prerequisites - macOS
 ---------------------
@@ -284,16 +311,16 @@ Building Solidity is quite similar on Linux, macOS and other Unices:
     cd build
     cmake .. && make
 
-.. warning::
-
-    BSD builds should work, but are untested by the Solidity team.
-
 or even easier on Linux and macOS, you can run:
 
 .. code-block:: bash
 
     #note: this will install binaries solc and soltest at usr/local/bin
     ./scripts/build.sh
+
+.. warning::
+
+    BSD builds should work, but are untested by the Solidity team.
 
 And for Windows:
 
