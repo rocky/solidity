@@ -46,8 +46,8 @@ struct Testsuite
 Testsuite const g_interactiveTestsuites[] = {
 /*
 	Title                  Path              Subpath                SMT    IPC    Creator function */
-	{"ErrorRecovery",       "libsolidityp0", "errorRecoveryTests",  false, false, &SyntaxTest::createErrorRecovery},
-	{"ASTRecovery",         "libsolidityp0", "ASTRecoveryTests",    false, false, &ASTRecoveryTest::create},
+	{"Error Recovery",      "libsolidityp0", "errorRecoveryTests",  false, false, &SyntaxTest::createErrorRecovery},
+	{"AST Recovery",        "libsolidityp0", "ASTRecoveryTests",    false, false, &ASTRecoveryTest::create},
 };
 
 }
