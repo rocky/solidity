@@ -34,17 +34,16 @@ namespace solidity
 namespace testparser
 {
 
-class ASTRecoveryTest: AnalysisFramework, public EVMVersionRestrictedTestCase
+class ASTRecoveryTest: public TestCase
 {
 public:
 	static std::unique_ptr<TestCase> create(Config const& _config)
-	{
-		return std::make_unique<ASTRecoveryTest>(_config.filename, _config.evmVersion);
-	}
-	ASTRecoveryTest(std::string const& _filename, langutil::EVMVersion _evmVersion);
+	{ return std::unique_ptr<TestCase>(new ASTRecoveryTest(_config.filename)); }
+	ASTRecoveryTest(std::string const& _filename);
 
 	TestResult run(std::ostream& _stream, std::string const& _linePrefix = "", bool _formatted = false) override;
-	void printSource(std::ostream &_stream, std::string const &_linePrefix = "", bool _formatted = false) const override;
+	void printSource(std::ostream &_stream, std::string const &_linePrefix = "", bool _formatted = false) const override
+		;
 	void printUpdatedExpectations(std::ostream& _stream, std::string const& _linePrefix) const override
 	{
 	    // to be determined.
@@ -53,10 +52,11 @@ public:
 		(void) _linePrefix;
 	    return;
 	}
-protected:
-	std::string m_source;
-	langutil::EVMVersion const m_evmVersion;
-	bool m_parserErrorRecovery = true;
+private:
+	std::vector<std::pair<std::string, std::string>> m_sources;
+	std::string m_expectation;
+	std::string m_astFilename;
+	std::string m_result;
 };
 
 }

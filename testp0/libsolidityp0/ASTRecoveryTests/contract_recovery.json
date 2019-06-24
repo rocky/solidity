@@ -1,0 +1,24 @@
+{
+	"absolutePath" : "a",
+	"exportedSymbols" : {},
+	"id" : 3,
+	"nodeType" : "SourceUnit",
+	"nodes" : 
+	[
+		{
+			"baseContracts" : [],
+			"contractDependencies" : [],
+			"contractKind" : "contract",
+			"documentation" : null,
+			"fullyImplemented" : true,
+			"id" : 2,
+			"linearizedBaseContracts" : [],
+			"name" : "Errort6",
+			"nodeType" : "ContractDefinition",
+			"nodes" : [],
+			"scope" : null,
+			"src" : "0:37:1"
+		}
+	],
+	"src" : "0:166:1"
+}

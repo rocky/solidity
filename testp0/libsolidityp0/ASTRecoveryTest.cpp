@@ -17,6 +17,10 @@
 
 #include <testp0/libsolidityp0/ASTRecoveryTest.h>
 #include <testp0/Options.h>
+#include <libdevcore/AnsiColorized.h>
+#include <liblangutil/SourceReferenceFormatterHuman.h>
+#include <libsolidityp0/ast/ASTJsonConverter.h>
+#include <libsolidityp0/interface/CompilerStack.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/throw_exception.hpp>
@@ -33,46 +37,104 @@ using namespace std;
 namespace fs = boost::filesystem;
 using namespace boost::unit_test;
 
-ASTRecoveryTest::ASTRecoveryTest(string const& _filename, langutil::EVMVersion _evmVersion): m_evmVersion(_evmVersion)
+ASTRecoveryTest::ASTRecoveryTest(string const& _filename)
 {
+	if (!boost::algorithm::ends_with(_filename, ".sol"))
+		BOOST_THROW_EXCEPTION(runtime_error("Invalid test contract file name: \"" + _filename + "\"."));
+
+	m_astFilename = _filename.substr(0, _filename.size() - 4) + ".json";
+
 	ifstream file(_filename);
 	if (!file)
 		BOOST_THROW_EXCEPTION(runtime_error("Cannot open test contract: \"" + _filename + "\"."));
 	file.exceptions(ios::badbit);
 
-	m_source = parseSourceAndSettings(file);
-	m_parserErrorRecovery = true;
+	string sourceName;
+	string source;
+	string line;
+	string const sourceDelimiter("// ---- SOURCE: ");
+	string const delimiter("// ----");
+	while (getline(file, line))
+	{
+		if (boost::algorithm::starts_with(line, sourceDelimiter))
+		{
+			if (!sourceName.empty())
+				m_sources.emplace_back(sourceName, source);
+
+			sourceName = line.substr(sourceDelimiter.size(), string::npos);
+			source = string();
+		}
+		else if (!line.empty() && !boost::algorithm::starts_with(line, delimiter))
+			source += line + "\n";
+	}
+
+	m_sources.emplace_back(sourceName.empty() ? "a" : sourceName, source);
+
+	file.close();
+	file.open(m_astFilename);
+	if (file)
+	{
+		string line;
+		while (getline(file, line))
+			m_expectation += line + "\n";
+	}
+
+	file.close();
 }
 
 TestCase::TestResult ASTRecoveryTest::run(ostream& _stream, string const& _linePrefix, bool _formatted)
 {
-	string const versionPragma = "pragma solidity >=0.0;\n";
-	compiler().reset();
-	compiler().setSources({{"", versionPragma + m_source}});
-	compiler().setEVMVersion(m_evmVersion);
-	compiler().setParserErrorRecovery(m_parserErrorRecovery);
-	compiler().parse();
-	compiler().analyze();
+	CompilerStack c;
+	StringMap sources;
+	map<string, unsigned> sourceIndices;
+	for (size_t i = 0; i < m_sources.size(); i++)
+	{
+		sources[m_sources[i].first] = m_sources[i].second;
+		sourceIndices[m_sources[i].first] = i + 1;
+	}
 
-	// For now we just want to make sure we don't SEGV
-	(void) _stream;
-	(void) _linePrefix;
-	(void) _formatted;
-	return TestResult::Success;
-	// return printExpectationAndError(bool _success,  _stream, _linePrefix, _formatted) ? TestResult::Success : TestResult::Failure;
+	c.setSources(sources);
+	c.setEVMVersion(dev::testp0::Options::get().evmVersion());
+	c.setParserErrorRecovery(true);
+	c.parse();
+	c.analyze();
+
+	for (size_t i = 0; i < m_sources.size(); i++)
+	{
+		ostringstream result;
+		ASTJsonConverter(false, sourceIndices).print(result, c.ast(m_sources[i].first));
+		m_result += result.str();
+		if (i != m_sources.size() - 1)
+			m_result += ",";
+		m_result += "\n";
+	}
+
+	bool resultsMatch = true;
+
+	if (m_expectation != m_result)
+	{
+		string nextIndentLevel = _linePrefix + "  ";
+		AnsiColorized(_stream, _formatted, {BOLD, CYAN}) << _linePrefix << "Expected result:" << endl;
+		{
+			istringstream stream(m_expectation);
+			string line;
+			while (getline(stream, line))
+				_stream << nextIndentLevel << line << endl;
+		}
+		_stream << endl;
+		AnsiColorized(_stream, _formatted, {BOLD, CYAN}) << _linePrefix << "Obtained result:" << endl;
+		{
+			istringstream stream(m_result);
+			string line;
+			while (getline(stream, line))
+				_stream << nextIndentLevel << line << endl;
+		}
+		_stream << endl;
+		resultsMatch = false;
+	}
+
+	return resultsMatch ? TestResult::Success : TestResult::Failure;
 }
-
-// bool ASTRecoveryTest::printExpectationAndError(bool _success, ostream& _stream, string const& _linePrefix, bool _formatted)
-// {
-// 	if (!_success)
-// 	{
-// 		string nextIndentLevel = _linePrefix + "  ";
-// 		AnsiColorized(_stream, _formatted, {BOLD, CYAN}) << _linePrefix << "Something went wrong" << endl;
-// 		return false;
-// 	}
-// 	return true;
-// }
-
 
 void ASTRecoveryTest::printSource(ostream& _stream, string const& _linePrefix, bool _formatted) const
 {

@@ -47,7 +47,7 @@ Testsuite const g_interactiveTestsuites[] = {
 /*
 	Title                  Path              Subpath                SMT    IPC    Creator function */
 	{"Error Recovery",      "libsolidityp0", "errorRecoveryTests",  false, false, &SyntaxTest::createErrorRecovery},
-	{"AST Recovery",        "libsolidityp0", "ASTRecoveryTests",    false, false, &ASTRecoveryTest::create},
+	{"JSON AST Recovery",   "libsolidityp0", "ASTRecoveryTests",    false, false, &ASTRecoveryTest::create},
 };
 
 }

@@ -1,0 +1,76 @@
+{
+	"absolutePath" : "a",
+	"exportedSymbols" : {},
+	"id" : 11,
+	"nodeType" : "SourceUnit",
+	"nodes" : 
+	[
+		{
+			"id" : 1,
+			"literals" : 
+			[
+				"solidity",
+				">=",
+				"0.0",
+				".0"
+			],
+			"nodeType" : "PragmaDirective",
+			"src" : "0:24:1"
+		},
+		{
+			"baseContracts" : [],
+			"contractDependencies" : [],
+			"contractKind" : "contract",
+			"documentation" : null,
+			"fullyImplemented" : true,
+			"id" : 10,
+			"linearizedBaseContracts" : [],
+			"name" : "Error3",
+			"nodeType" : "ContractDefinition",
+			"nodes" : 
+			[
+				{
+					"body" : 
+					{
+						"id" : 8,
+						"nodeType" : "Block",
+						"src" : "65:49:1",
+						"statements" : 
+						[
+							null
+						]
+					},
+					"documentation" : null,
+					"id" : 9,
+					"implemented" : true,
+					"kind" : "constructor",
+					"modifiers" : [],
+					"name" : "",
+					"nodeType" : "FunctionDefinition",
+					"parameters" : 
+					{
+						"id" : 2,
+						"nodeType" : "ParameterList",
+						"parameters" : [],
+						"src" : "55:2:1"
+					},
+					"returnParameters" : 
+					{
+						"id" : 3,
+						"nodeType" : "ParameterList",
+						"parameters" : [],
+						"src" : "65:0:1"
+					},
+					"scope" : null,
+					"src" : "44:70:1",
+					"stateMutability" : "nonpayable",
+					"superFunction" : null,
+					"visibility" : "public"
+				}
+			],
+			"scope" : null,
+			"src" : "25:91:1"
+		}
+	],
+	"src" : "0:223:1"
+}
