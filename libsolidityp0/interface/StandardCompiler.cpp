@@ -737,7 +737,10 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 			compilerStack.compile();
 		else
 #endif
-			compilerStack.parseAndAnalyze();
+		{
+			if (compilerStack.parse() || _inputsAndSettings.parserErrorRecovery)
+				compilerStack.analyze();
+		}
 
 		for (auto const& error: compilerStack.errors())
 		{

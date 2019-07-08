@@ -85,8 +85,8 @@ public:
 	enum State {
 		Empty,
 		SourcesSet,
-		ParsingSuccessful,
-		AnalysisSuccessful,
+		ParsingPerformed,  // Parsing done which may or may not have errors
+                AnalysisPerformed,  // Analysis done which may or may not have errors
 		CompilationSuccessful
 	};
 
@@ -181,11 +181,6 @@ public:
 	///  typechecking, staticAnalysis) on previously parsed sources.
 	/// @returns false on error.
 	bool analyze();
-
-	/// Parses and analyzes all source units that were added
-	/// @returns false on error. If @a _astOnly is true,
-	/// we just do steps up to AST generation and tolerate parsing errors.
-	bool parseAndAnalyze(bool _astOnly = false);
 
 	/// Compiles the source units that were previously added and parsed.
 	/// @returns false on error.
