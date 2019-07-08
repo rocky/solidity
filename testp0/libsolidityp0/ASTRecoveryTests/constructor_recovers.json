@@ -1,6 +1,12 @@
 {
 	"absolutePath" : "a",
-	"exportedSymbols" : {},
+	"exportedSymbols" : 
+	{
+		"Error1" : 
+		[
+			18
+		]
+	},
 	"id" : 19,
 	"nodeType" : "SourceUnit",
 	"nodes" : 
@@ -24,7 +30,10 @@
 			"documentation" : null,
 			"fullyImplemented" : true,
 			"id" : 18,
-			"linearizedBaseContracts" : [],
+			"linearizedBaseContracts" : 
+			[
+				18
+			],
 			"name" : "Error1",
 			"nodeType" : "ContractDefinition",
 			"nodes" : 
@@ -61,7 +70,7 @@
 						"parameters" : [],
 						"src" : "66:0:1"
 					},
-					"scope" : null,
+					"scope" : 18,
 					"src" : "45:70:1",
 					"stateMutability" : "nonpayable",
 					"superFunction" : null,
@@ -83,7 +92,7 @@
 									"id" : 14,
 									"isConstant" : false,
 									"isLValue" : false,
-									"isPure" : false,
+									"isPure" : true,
 									"kind" : "number",
 									"lValueRequested" : false,
 									"nodeType" : "Literal",
@@ -91,12 +100,12 @@
 									"subdenomination" : null,
 									"typeDescriptions" : 
 									{
-										"typeIdentifier" : null,
-										"typeString" : null
+										"typeIdentifier" : "t_rational_5_by_1",
+										"typeString" : "int_const 5"
 									},
 									"value" : "5"
 								},
-								"functionReturnParameters" : null,
+								"functionReturnParameters" : 13,
 								"id" : 15,
 								"nodeType" : "Return",
 								"src" : "414:8:1"
@@ -128,14 +137,14 @@
 								"id" : 12,
 								"name" : "",
 								"nodeType" : "VariableDeclaration",
-								"scope" : null,
+								"scope" : 17,
 								"src" : "402:4:1",
 								"stateVariable" : false,
 								"storageLocation" : "default",
 								"typeDescriptions" : 
 								{
-									"typeIdentifier" : null,
-									"typeString" : null
+									"typeIdentifier" : "t_uint256",
+									"typeString" : "uint256"
 								},
 								"typeName" : 
 								{
@@ -145,8 +154,8 @@
 									"src" : "402:4:1",
 									"typeDescriptions" : 
 									{
-										"typeIdentifier" : null,
-										"typeString" : null
+										"typeIdentifier" : "t_uint256",
+										"typeString" : "uint256"
 									}
 								},
 								"value" : null,
@@ -155,14 +164,14 @@
 						],
 						"src" : "401:6:1"
 					},
-					"scope" : null,
+					"scope" : 18,
 					"src" : "366:61:1",
 					"stateMutability" : "view",
 					"superFunction" : null,
 					"visibility" : "public"
 				}
 			],
-			"scope" : null,
+			"scope" : 19,
 			"src" : "25:404:1"
 		}
 	],

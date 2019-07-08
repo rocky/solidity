@@ -30,9 +30,7 @@
 #include <libsolidityp0/analysis/ContractLevelChecker.h>
 #include <libsolidityp0/analysis/DocStringAnalyser.h>
 #include <libsolidityp0/analysis/GlobalContext.h>
-#ifdef ROCKY_REINSTATED
 #include <libsolidityp0/analysis/NameAndTypeResolver.h>
-#endif
 #include <libsolidityp0/analysis/PostTypeChecker.h>
 #include <libsolidityp0/analysis/StaticAnalyzer.h>
 #include <libsolidityp0/analysis/SyntaxChecker.h>
@@ -288,7 +286,6 @@ bool CompilerStack::analyze()
 			if (!docStringAnalyser.analyseDocStrings(*source->ast))
 				noErrors = false;
 
-#ifdef ROCKY_REINSTATED
 		m_globalContext = make_shared<GlobalContext>();
 		NameAndTypeResolver resolver(*m_globalContext, m_scopes, m_errorReporter);
 		for (Source const* source: m_sourceOrder)
@@ -380,6 +377,7 @@ bool CompilerStack::analyze()
 					noErrors = false;
 		}
 
+#ifdef ROCKY_REINSTATED
 		if (noErrors)
 		{
 			// Check for state mutability in every function.

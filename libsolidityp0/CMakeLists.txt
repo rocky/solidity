@@ -16,8 +16,12 @@ set(sources
 	analysis/DocStringAnalyser.h
 	analysis/GlobalContext.cpp
 	analysis/GlobalContext.h
+	analysis/NameAndTypeResolver.cpp
+	analysis/NameAndTypeResolver.h
 	analysis/PostTypeChecker.cpp
 	analysis/PostTypeChecker.h
+	analysis/ReferencesResolver.cpp
+	analysis/ReferencesResolver.h
 	analysis/StaticAnalyzer.cpp
 	analysis/StaticAnalyzer.h
 	analysis/SyntaxChecker.cpp

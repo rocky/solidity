@@ -1,6 +1,12 @@
 {
 	"absolutePath" : "a",
-	"exportedSymbols" : {},
+	"exportedSymbols" : 
+	{
+		"Error3" : 
+		[
+			10
+		]
+	},
 	"id" : 11,
 	"nodeType" : "SourceUnit",
 	"nodes" : 
@@ -24,7 +30,10 @@
 			"documentation" : null,
 			"fullyImplemented" : true,
 			"id" : 10,
-			"linearizedBaseContracts" : [],
+			"linearizedBaseContracts" : 
+			[
+				10
+			],
 			"name" : "Error3",
 			"nodeType" : "ContractDefinition",
 			"nodes" : 
@@ -61,14 +70,14 @@
 						"parameters" : [],
 						"src" : "65:0:1"
 					},
-					"scope" : null,
+					"scope" : 10,
 					"src" : "44:70:1",
 					"stateMutability" : "nonpayable",
 					"superFunction" : null,
 					"visibility" : "public"
 				}
 			],
-			"scope" : null,
+			"scope" : 11,
 			"src" : "25:91:1"
 		}
 	],
