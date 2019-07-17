@@ -122,9 +122,7 @@ void Parser::parsePragmaVersion(SourceLocation const& _location, vector<Token> c
 				_location,
 				"Source file requires different compiler version (current compiler is " +
 				string(VersionString) + " - note that nightly builds are considered to be "
-				"strictly less than the released version";
-				m_errorReporter.fatalParserError(_location, message);
-	}
+				"strictly less than the released version");
 }
 
 ASTPointer<PragmaDirective> Parser::parsePragmaDirective()
