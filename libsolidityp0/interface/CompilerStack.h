@@ -43,6 +43,7 @@
 #include <functional>
 #include <memory>
 #include <ostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -86,7 +87,7 @@ public:
 		Empty,
 		SourcesSet,
 		ParsingPerformed,  // Parsing done which may or may not have errors
-                AnalysisPerformed,  // Analysis done which may or may not have errors
+		AnalysisPerformed, // Analysis done which may or may not have errors
 		CompilationSuccessful
 	};
 
@@ -143,21 +144,26 @@ public:
 		m_parserErrorRecovery = _wantErrorRecovery;
 	}
 
-
 	/// Set the EVM version used before running compile.
 	/// When called without an argument it will revert to the default version.
 	/// Must be set before parsing.
 	void setEVMVersion(langutil::EVMVersion _version = langutil::EVMVersion{});
 
-	/// Sets the list of requested contract names. If empty, no filtering is performed and every contract
-	/// found in the supplied sources is compiled. Names are cleared iff @a _contractNames is missing.
-	void setRequestedContractNames(std::set<std::string> const& _contractNames = std::set<std::string>{}) {
+	/// Sets the requested contract names by source.
+	/// If empty, no filtering is performed and every contract
+	/// found in the supplied sources is compiled.
+	/// Names are cleared iff @a _contractNames is missing.
+	void setRequestedContractNames(std::map<std::string, std::set<std::string>> const& _contractNames = std::map<std::string, std::set<std::string>>{})
+	{
 		m_requestedContractNames = _contractNames;
 	}
 
 #ifdef ROCKY_REINSTATED
 	/// Enable experimental generation of Yul IR code.
 	void enableIRGeneration(bool _enable = true) { m_generateIR = _enable; }
+
+	/// Enable experimental generation of eWasm code. If enabled, IR is also generated.
+	void enableEWasmGeneration(bool _enable = true) { m_generateEWasm = _enable; }
 #endif
 
 	/// @arg _metadataLiteralSources When true, store sources as literals in the contract metadata.
@@ -181,6 +187,10 @@ public:
 	///  typechecking, staticAnalysis) on previously parsed sources.
 	/// @returns false on error.
 	bool analyze();
+
+	/// Parses and analyzes all source units that were added
+	/// @returns false on error.
+	bool parseAndAnalyze();
 
 	/// Compiles the source units that were previously added and parsed.
 	/// @returns false on error.
@@ -225,6 +235,9 @@ public:
 
 	/// @returns the optimized IR representation of a contract.
 	std::string const& yulIROptimized(std::string const& _contractName) const;
+
+	/// @returns the eWasm (text) representation of a contract.
+	std::string const& eWasm(std::string const& _contractName) const;
 
 	/// @returns the assembled object for a contract.
 	eth::LinkerObject const& object(std::string const& _contractName) const;
@@ -278,6 +291,10 @@ public:
 	Json::Value gasEstimates(std::string const& _contractName) const;
 #endif
 
+#ifdef ROCKY_REINSTATED
+	/// Overwrites the release/prerelease flag. Should only be used for testing.
+	void overwriteReleaseFlag(bool release) { m_release = release; }
+#endif
 private:
 	/// The state per source unit. Filled gradually during parsing.
 	struct Source
@@ -287,11 +304,13 @@ private:
 #ifdef ROCKY_REINSTATED
 		h256 mutable keccak256HashCached;
 		h256 mutable swarmHashCached;
+		std::string mutable ipfsUrlCached;
 #endif
 		void reset() { *this = Source(); }
 #ifdef ROCKY_REINSTATED
 		h256 const& keccak256() const;
 		h256 const& swarmHash() const;
+		std::string const& ipfsUrl() const;
 #endif
 	};
 
@@ -305,6 +324,7 @@ private:
 		eth::LinkerObject runtimeObject; ///< Runtime object.
 		std::string yulIR; ///< Experimental Yul IR code.
 		std::string yulIROptimized; ///< Optimized experimental Yul IR code.
+		std::string eWasm; ///< Experimental eWasm code (text representation).
 		mutable std::unique_ptr<std::string const> metadata; ///< The metadata json that will be hashed into the chain.
 		mutable std::unique_ptr<Json::Value const> abi;
 		mutable std::unique_ptr<Json::Value const> userDocumentation;
@@ -321,6 +341,9 @@ private:
 	std::string applyRemapping(std::string const& _path, std::string const& _context);
 	void resolveImports();
 
+	/// @returns true if the source is requested to be compiled.
+	bool isRequestedSource(std::string const& _sourceName) const;
+
 	/// @returns true if the contract is requested to be compiled.
 	bool isRequestedContract(ContractDefinition const& _contract) const;
 
@@ -336,6 +359,9 @@ private:
 	/// Generate Yul IR for a single contract.
 	/// The IR is stored but otherwise unused.
 	void generateIR(ContractDefinition const& _contract);
+
+	/// Generate eWasm text representation for a single contract.
+	void generateEWasm(ContractDefinition const& _contract);
 
 	/// Links all the known library addresses in the available objects. Any unknown
 	/// library will still be kept as an unlinked placeholder in the objects.
@@ -359,7 +385,7 @@ private:
 	std::string createMetadata(Contract const& _contract) const;
 
 	/// @returns the metadata CBOR for the given serialised metadata JSON.
-	static bytes createCBORMetadata(std::string const& _metadata, bool _experimentalMode);
+	bytes createCBORMetadata(std::string const& _metadata, bool _experimentalMode);
 
 	/// @returns the computer source mapping string.
 	std::string computeSourceMapping(eth::AssemblyItems const& _items) const;
@@ -391,8 +417,11 @@ private:
 	ReadCallback::Callback m_readFile;
 	OptimiserSettings m_optimiserSettings;
 	langutil::EVMVersion m_evmVersion;
-	std::set<std::string> m_requestedContractNames;
+	std::map<std::string, std::set<std::string>> m_requestedContractNames;
 	bool m_generateIR;
+#ifdef ROCKY_REINSTATED
+	bool m_generateEWasm;
+#endif
 	std::map<std::string, h160> m_libraries;
 	/// list of path prefix remappings, e.g. mylibrary: github.com/ethereum = /usr/local/ethereum
 	/// "context:prefix=target"

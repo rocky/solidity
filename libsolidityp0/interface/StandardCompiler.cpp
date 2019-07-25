@@ -109,6 +109,7 @@ Json::Value formatErrorWithException(
 	return formatError(_warning, _type, _component, message, formattedMessage, sourceLocation);
 }
 
+#ifdef ROCKY_REINSTATED
 set<string> requestedContractNames(Json::Value const& _outputSelection)
 {
 	set<string> names;
@@ -124,6 +125,7 @@ set<string> requestedContractNames(Json::Value const& _outputSelection)
 	}
 	return names;
 }
+#endif
 
 /// Returns true iff @a _hash (hex with 0x prefix) is the Keccak256 hash of the binary data in @a _content.
 bool hashMatchesContent(string const& _hash, string const& _content)
@@ -715,10 +717,8 @@ Json::Value StandardCompiler::compileSolidity(StandardCompiler::InputsAndSetting
 	compilerStack.setOptimiserSettings(std::move(_inputsAndSettings.optimiserSettings));
 	compilerStack.setLibraries(_inputsAndSettings.libraries);
 	compilerStack.useMetadataLiteralSources(_inputsAndSettings.metadataLiteralSources);
-#endif
 	compilerStack.setRequestedContractNames(requestedContractNames(_inputsAndSettings.outputSelection));
 
-#ifdef ROCKY_REINSTATED
 	bool const irRequested = isIRRequested(_inputsAndSettings.outputSelection);
 
 	compilerStack.enableIRGeneration(irRequested);

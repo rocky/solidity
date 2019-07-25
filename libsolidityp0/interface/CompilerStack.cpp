@@ -81,6 +81,7 @@ static int g_compilerStackCounts = 0;
 CompilerStack::CompilerStack(ReadCallback::Callback const& _readFile):
 	m_readFile{_readFile},
 	m_generateIR{false},
+	// m_generateEWasm{false},
 	m_errorList{},
 	m_errorReporter{m_errorList}
 {
@@ -187,6 +188,7 @@ void CompilerStack::reset(bool _keepSettings)
 		m_evmVersion = langutil::EVMVersion();
 #ifdef ROCKY_REINSTATED
 		m_generateIR = false;
+		m_generateEWasm = false;
 		m_optimiserSettings = OptimiserSettings::minimal();
 #endif
 		m_metadataLiteralSources = false;
@@ -391,10 +393,10 @@ bool CompilerStack::analyze()
 
 		if (noErrors)
 		{
-			SMTChecker smtChecker(m_errorReporter, m_smtlib2Responses);
+			ModelChecker modelChecker(m_errorReporter, m_smtlib2Responses);
 			for (Source const* source: m_sourceOrder)
-				smtChecker.analyze(*source->ast, source->scanner);
-			m_unhandledSMTLib2Queries += smtChecker.unhandledQueries();
+				modelChecker.analyze(*source->ast, source->scanner);
+			m_unhandledSMTLib2Queries += modelChecker.unhandledQueries();
 		}
 #endif
 	}
@@ -412,6 +414,11 @@ bool CompilerStack::analyze()
 	}
 	else
 		return false;
+}
+
+bool CompilerStack::parseAndAnalyze()
+{
+	return parse() && analyze();
 }
 
 bool CompilerStack::isRequestedContract(ContractDefinition const& _contract) const
@@ -442,8 +449,10 @@ bool CompilerStack::compile()
 				if (isRequestedContract(*contract))
 				{
 					compileContract(*contract, otherCompilers);
-					if (m_generateIR)
+					if (m_generateIR || m_generateEWasm)
 						generateIR(*contract);
+					if (m_generateEWasm)
+						generateEWasm(*contract);
 				}
 	m_stackState = CompilationSuccessful;
 	this->link();
@@ -564,6 +573,30 @@ std::string const CompilerStack::filesystemFriendlyName(string const& _contractN
 }
 
 #ifdef ROCKY_REINSTATED
+string const& CompilerStack::yulIR(string const& _contractName) const
+{
+	if (m_stackState != CompilationSuccessful)
+		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Compilation was not successful."));
+
+	return contract(_contractName).yulIR;
+}
+
+string const& CompilerStack::yulIROptimized(string const& _contractName) const
+{
+	if (m_stackState != CompilationSuccessful)
+		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Compilation was not successful."));
+
+	return contract(_contractName).yulIROptimized;
+}
+
+string const& CompilerStack::eWasm(string const& _contractName) const
+{
+	if (m_stackState != CompilationSuccessful)
+		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Compilation was not successful."));
+
+	return contract(_contractName).eWasm;
+}
+
 eth::LinkerObject const& CompilerStack::object(string const& _contractName) const
 {
 	if (m_stackState != CompilationSuccessful)
@@ -799,8 +832,16 @@ h256 const& CompilerStack::Source::keccak256() const
 h256 const& CompilerStack::Source::swarmHash() const
 {
 	if (swarmHashCached == h256{})
-		swarmHashCached = dev::swarmHash(scanner->source());
+		swarmHashCached = dev::bzzr1Hash(scanner->source());
 	return swarmHashCached;
+}
+
+string const& CompilerStack::Source::ipfsUrl() const
+{
+	if (ipfsUrlCached.empty())
+		if (scanner->source().size() < 1024 * 256)
+			ipfsUrlCached = "dweb:/ipfs/" + dev::ipfsHashBase58(scanner->source());
+	return ipfsUrlCached;
 }
 #endif
 
@@ -884,7 +925,8 @@ string CompilerStack::applyRemapping(string const& _path, string const& _context
 
 void CompilerStack::resolveImports()
 {
-	if (!m_parserErrorRecovery) solAssert(m_stackState == ParsingPerformed, "");
+	if (!m_parserErrorRecovery)
+		solAssert(m_stackState == ParsingPerformed, "");
 
 	// topological sorting (depth first search) of the import graph, cutting potential cycles
 	vector<Source const*> sourceOrder;
@@ -895,7 +937,7 @@ void CompilerStack::resolveImports()
 		if (sourcesSeen.count(_source))
 			return;
 		sourcesSeen.insert(_source);
-		if (_source->ast == nullptr)
+		if (!_source->ast)
 			return;
 
 		for (ASTPointer<ASTNode> const& node: _source->ast->nodes())
@@ -911,7 +953,10 @@ void CompilerStack::resolveImports()
 	};
 
 	for (auto const& sourcePair: m_sources)
-		toposort(&sourcePair.second);
+#ifdef ROCKY_REINSTATED
+		if (isRequestedSource(sourcePair.first))
+#endif
+			toposort(&sourcePair.second);
 
 	swap(m_sourceOrder, sourceOrder);
 }
@@ -982,6 +1027,54 @@ void CompilerStack::compileContract(
 
 	_otherCompilers[compiledContract.contract] = compiler;
 }
+
+void CompilerStack::generateIR(ContractDefinition const& _contract)
+{
+	solAssert(m_stackState >= AnalysisPerformed, "");
+
+	if (!_contract.canBeDeployed())
+		return;
+
+	Contract& compiledContract = m_contracts.at(_contract.fullyQualifiedName());
+	if (!compiledContract.yulIR.empty())
+		return;
+
+	for (auto const* dependency: _contract.annotation().contractDependencies)
+		generateIR(*dependency);
+
+	IRGenerator generator(m_evmVersion, m_optimiserSettings);
+	tie(compiledContract.yulIR, compiledContract.yulIROptimized) = generator.run(_contract);
+}
+
+void CompilerStack::generateEWasm(ContractDefinition const& _contract)
+{
+	solAssert(m_stackState >= AnalysisPerformed, "");
+	Contract& compiledContract = m_contracts.at(_contract.fullyQualifiedName());
+	solAssert(!compiledContract.yulIROptimized.empty(), "");
+	if (!compiledContract.eWasm.empty())
+		return;
+
+	// Re-parse the Yul IR in EVM dialect
+	yul::AssemblyStack evmStack(m_evmVersion, yul::AssemblyStack::Language::StrictAssembly, m_optimiserSettings);
+	evmStack.parseAndAnalyze("", compiledContract.yulIROptimized);
+
+	// Turn into eWasm dialect
+	yul::Object ewasmObject = yul::EVMToEWasmTranslator(
+		yul::EVMDialect::strictAssemblyForEVMObjects(m_evmVersion)
+	).run(*evmStack.parserResult());
+
+	// Re-inject into an assembly stack for the eWasm dialect
+	yul::AssemblyStack ewasmStack(m_evmVersion, yul::AssemblyStack::Language::EWasm, m_optimiserSettings);
+	// TODO this is a hack for now - provide as structured AST!
+	ewasmStack.parseAndAnalyze("", "{}");
+	*ewasmStack.parserResult() = move(ewasmObject);
+	ewasmStack.optimize();
+
+	//cout << yul::AsmPrinter{}(*ewasmStack.parserResult()->code) << endl;
+
+	// Turn into eWasm text representation.
+	compiledContract.eWasm = ewasmStack.assemble(yul::AssemblyStack::Machine::eWasm).assembly;
+}
 #endif
 
 CompilerStack::Contract const& CompilerStack::contract(string const& _contractName) const
@@ -1051,7 +1144,7 @@ string CompilerStack::createMetadata(Contract const& _contract) const
 		else
 		{
 			meta["sources"][s.first]["urls"] = Json::arrayValue;
-			meta["sources"][s.first]["urls"].append("bzzr://" + toHex(s.second.swarmHash().asBytes()));
+			meta["sources"][s.first]["urls"].append("bzz-raw://" + toHex(s.second.swarmHash().asBytes()));
 			meta["sources"][s.first]["urls"].append(s.second.ipfsUrl());
 		}
 	}
@@ -1198,7 +1291,7 @@ private:
 bytes CompilerStack::createCBORMetadata(string const& _metadata, bool _experimentalMode)
 {
 	MetadataCBOREncoder encoder;
-	encoder.pushBytes("bzzr0", dev::swarmHash(_metadata).asBytes());
+	encoder.pushBytes("bzzr1", dev::bzzr1Hash(_metadata).asBytes());
 	if (_experimentalMode)
 		encoder.pushBool("experimental", true);
 	if (m_release)
