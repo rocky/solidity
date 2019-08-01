@@ -81,7 +81,9 @@ static int g_compilerStackCounts = 0;
 CompilerStack::CompilerStack(ReadCallback::Callback const& _readFile):
 	m_readFile{_readFile},
 	m_generateIR{false},
-	// m_generateEWasm{false},
+#ifdef ROCKY_REINSTATED
+	m_generateEWasm{false},
+#endif
 	m_errorList{},
 	m_errorReporter{m_errorList}
 {
@@ -770,9 +772,6 @@ SourceUnit const& CompilerStack::ast(string const& _sourceName) const
 {
 	if (m_stackState < ParsingPerformed && !m_parserErrorRecovery)
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Parsing was not successful."));
-
-	// if (source(_sourceName).ast == nullptr)
-	// 	BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Parsing with error recovery did not produce an AST."));
 
 	return *source(_sourceName).ast;
 }

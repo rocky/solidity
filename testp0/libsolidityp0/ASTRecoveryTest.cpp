@@ -44,7 +44,7 @@ ASTRecoveryTest::ASTRecoveryTest(string const& _filename)
 
 	m_astFilename = _filename.substr(0, _filename.size() - 4) + ".json";
 
-	ifstream file(_filename);
+	ifstream file{_filename};
 	if (!file)
 		BOOST_THROW_EXCEPTION(runtime_error("Cannot open test contract: \"" + _filename + "\"."));
 	file.exceptions(ios::badbit);
@@ -52,8 +52,8 @@ ASTRecoveryTest::ASTRecoveryTest(string const& _filename)
 	string sourceName;
 	string source;
 	string line;
-	string const sourceDelimiter("// ---- SOURCE: ");
-	string const delimiter("// ----");
+	string const sourceDelimiter{"// ---- SOURCE: "};
+	string const delimiter{"// ----"};
 	while (getline(file, line))
 	{
 		if (boost::algorithm::starts_with(line, sourceDelimiter))
@@ -62,7 +62,7 @@ ASTRecoveryTest::ASTRecoveryTest(string const& _filename)
 				m_sources.emplace_back(sourceName, source);
 
 			sourceName = line.substr(sourceDelimiter.size(), string::npos);
-			source = string();
+			source.clear();
 		}
 		else if (!line.empty() && !boost::algorithm::starts_with(line, delimiter))
 			source += line + "\n";
@@ -136,11 +136,8 @@ TestCase::TestResult ASTRecoveryTest::run(ostream& _stream, string const& _lineP
 	return resultsMatch ? TestResult::Success : TestResult::Failure;
 }
 
-void ASTRecoveryTest::printSource(ostream& _stream, string const& _linePrefix, bool _formatted) const
+void ASTRecoveryTest::printSource(ostream&, string const&, bool) const
 {
 	// To be determined...
-	(void) _stream;
-	(void) _linePrefix;
-	(void) _formatted;
 	return;
 }

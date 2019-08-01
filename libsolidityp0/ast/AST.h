@@ -47,6 +47,7 @@ namespace yul
 {
 // Forward-declaration to <yul/AsmData.h>
 struct Block;
+struct Dialect;
 }
 
 namespace dev
@@ -82,13 +83,15 @@ public:
 	static void listAccept(std::vector<T> const& _list, ASTVisitor& _visitor)
 	{
 		for (T const& element: _list)
-			if (element) element->accept(_visitor);
+			if (element)
+				element->accept(_visitor);
 	}
 	template <class T>
 	static void listAccept(std::vector<T> const& _list, ASTConstVisitor& _visitor)
 	{
 		for (T const& element: _list)
-			if (element) element->accept(_visitor);
+			if (element)
+				element->accept(_visitor);
 	}
 
 	/// @returns a copy of the vector containing only the nodes which derive from T.
@@ -164,6 +167,11 @@ public:
 
 	/// @returns the source unit this scopable is present in.
 	SourceUnit const& sourceUnit() const;
+
+#ifdef ROCKY_REINSTATED
+	/// @returns the function or modifier definition this scopable is present in or nullptr.
+	CallableDeclaration const* functionOrModifierDefinition() const;
+#endif
 
 	/// @returns the source name this scopable is present in.
 	/// Can be combined with annotation().canonicalName (if present) to form a globally unique name.
@@ -1050,17 +1058,20 @@ public:
 	InlineAssembly(
 		SourceLocation const& _location,
 		ASTPointer<ASTString> const& _docString,
+		yul::Dialect const& _dialect,
 		std::shared_ptr<yul::Block> const& _operations
 	):
-		Statement(_location, _docString), m_operations(_operations) {}
+		Statement(_location, _docString), m_dialect(_dialect), m_operations(_operations) {}
 	void accept(ASTVisitor& _visitor) override;
 	void accept(ASTConstVisitor& _visitor) const override;
 
+	yul::Dialect const& dialect() const { return m_dialect; }
 	yul::Block const& operations() const { return *m_operations; }
 
 	InlineAssemblyAnnotation& annotation() const override;
 
 private:
+	yul::Dialect const& m_dialect;
 	std::shared_ptr<yul::Block> m_operations;
 };
 
