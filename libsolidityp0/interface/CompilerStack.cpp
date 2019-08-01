@@ -255,13 +255,9 @@ bool CompilerStack::parse()
 			}
 		}
 	}
-	if (Error::containsOnlyWarnings(m_errorReporter.errors()))
-	{
-		m_stackState = ParsingPerformed;
-		return true;
-	}
-	else
-		return false;
+
+	m_stackState = ParsingPerformed;
+	return Error::containsOnlyWarnings(m_errorReporter.errors());
 }
 
 bool CompilerStack::analyze()
@@ -270,7 +266,7 @@ bool CompilerStack::analyze()
 		(m_stackState != ParsingPerformed && !m_parserErrorRecovery) ||
 		m_stackState >= AnalysisPerformed
 	)
-		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Must call analyze only after parsing was successful."));
+		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Must call analyze only after parsing was performed."));
 	resolveImports();
 
 	bool noErrors = true;
@@ -409,18 +405,16 @@ bool CompilerStack::analyze()
 		noErrors = false;
 	}
 
-	if (noErrors)
-	{
-		m_stackState = AnalysisPerformed;
-		return true;
-	}
-	else
-		return false;
+	m_stackState = AnalysisPerformed;
+	return noErrors;
 }
 
 bool CompilerStack::parseAndAnalyze()
 {
-	return parse() && analyze();
+	parse();
+	if (!m_errorReporter.hasErrors() || m_parserErrorRecovery)
+		return analyze();
+	return false;
 }
 
 bool CompilerStack::isRequestedContract(ContractDefinition const& _contract) const
@@ -511,10 +505,7 @@ eth::AssemblyItems const* CompilerStack::runtimeAssemblyItems(string const& _con
 {
 	if (m_stackState != CompilationSuccessful)
 	{
-		if (m_parserErrorRecovery)
-			return nullptr;
-		else
-			BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Compilation was not successful."));
+		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_comment("Compilation was not successful."));
 	}
 
 	Contract const& currentContract = contract(_contractName);
